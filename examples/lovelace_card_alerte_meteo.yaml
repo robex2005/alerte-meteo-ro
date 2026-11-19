@@ -73,11 +73,23 @@ label: |-
   const act = wx.filter(w => w.c >= 1 && w.s <= now && now < w.e).sort((p, q) => q.c - p.c || q.e - p.e);
   const nxt = wx.filter(w => w.c >= 1 && w.s > now && w.s - now < 48 * 36e5).sort((p, q) => p.s - q.s);
 
+  // --- Mesajele ANM complete (folosite și pentru salt din rezumat) ---
+  const me = states[keyBy('sensor.mesaj_meteo_')[0]] || {}, txt = (me.attributes || {}).mesaj_complet || '';
+  const ids = String(S('sensor.anm_avertizare_id').state || '').split(',').map(x => x.trim()).filter(x => x && x !== '0' && !['unavailable', 'unknown', 'none'].includes(x)).reverse();
+  const txtS = String(txt);
+  const heads = [...txtS.matchAll(/MESAJ\s+(\d+)\s*\/\s*(\d+)/gi)].map(m => `${m[1]}/${m[2]}`);
+  const blocks = txtS.split(/MESAJ\s+\d+\s*\/\s*\d+/i).map(b => b.trim()).filter(Boolean);
+  const wxc = wx.filter(w => w.c >= 1);
+  // există un mesaj complet pentru acest interval? (atunci blocul din rezumat devine clicabil)
+  const hasMsg = (w) => blocks.some(b => { const iv = (b.match(/^\s*Interval[^:\n]*:\s*([^\n]+)/im) || [])[1]; const p = parseIv(iv); return !!(p && Math.abs(w.s - p[0]) < 6e4 && Math.abs(w.e - p[1]) < 6e4); });
+  // salt la mesajul complet: deschide cardul, derulează până la mesaj și îl evidențiază scurt
+  const GO = "(function(el){var d=el.closest('details');if(!d)return;var s=el.dataset.s,e=el.dataset.e,c=el.dataset.c;var t=[].slice.call(d.querySelectorAll('[data-msg]')).filter(function(m){return m.dataset.s===s&&m.dataset.e===e;});if(t.length>1){var t2=t.filter(function(m){return m.dataset.c===c;});if(t2.length)t=t2;}if(!t.length)return;d.open=true;var m=t[0];m.scrollIntoView({behavior:'smooth',block:'start'});m.style.transition='box-shadow .3s';m.style.boxShadow='0 0 0 2px var(--primary-color)';setTimeout(function(){m.style.boxShadow='';},2000);})(this)";
+
   const pill = (c) => `<span style="background:${CC[c]};color:${TX[c]};padding:2px 9px;border-radius:6px;font-weight:700;font-size:13px;letter-spacing:.3px;white-space:nowrap">COD ${CN[c].toUpperCase()}</span>`;
   const H3 = (t) => `<div style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--primary-text-color);opacity:.75;margin:12px 0 4px">${t}</div>`;
-  const blk = (c, ic, head, sub) => `<div style="display:flex;gap:10px;align-items:flex-start;padding:8px 10px;margin:6px 0;border-left:4px solid ${CC[c]};background:color-mix(in srgb,${CC[c]} 13%,transparent);border-radius:0 8px 8px 0">
+  const blk = (c, ic, head, sub, w) => { const go = !!(w && hasMsg(w)); return `<div ${go ? `data-s="${w.s.getTime()}" data-e="${w.e.getTime()}" data-c="${w.c}" onclick="${GO}" title="Mergi la mesajul complet ANM"` : ''} style="display:flex;gap:10px;align-items:flex-start;padding:8px 10px;margin:6px 0;border-left:4px solid ${CC[c]};background:color-mix(in srgb,${CC[c]} 13%,transparent);border-radius:0 8px 8px 0${go ? ';cursor:pointer' : ''}">
     <span style="font-size:22px;line-height:1.2;flex:none">${ic}</span>
-    <div style="min-width:0;flex:1"><div style="display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px">${head}</div><div style="font-size:14px;margin-top:3px;overflow-wrap:anywhere">${sub}</div></div></div>`;
+    <div style="min-width:0;flex:1"><div style="display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px">${head}</div><div style="font-size:14px;margin-top:3px;overflow-wrap:anywhere">${sub}</div></div>${go ? '<ha-icon icon="mdi:arrow-down" style="--mdc-icon-size:18px;opacity:.5;flex:none;align-self:center"></ha-icon>' : ''}</div>`; };
   const T = (t, w) => `<span style="font-size:14px;font-weight:${w || 600}">${t}</span>`;
 
   // --- Corp: ACUM / URMEAZĂ ---
@@ -85,21 +97,15 @@ label: |-
   if (act.length || ncC >= 1) {
     h += H3('Acum');
     if (ncC >= 1) h += blk(ncC, '⚡', pill(ncC) + T(ncEnd ? `nowcasting · până ${ncEnd}` : 'nowcasting · acum'), cap(ncF) || 'Fenomen violent iminent');
-    h += act.map(w => blk(w.c, emo(w.f), pill(w.c) + T(`până ${dl(w.e) === 'azi' ? '' : dl(w.e) + ' '}${hm(w.e)}`) + `<span style="font-size:13px;opacity:.75">încă ${rem(w.e - now)}</span>`, cap(w.f))).join('');
+    h += act.map(w => blk(w.c, emo(w.f), pill(w.c) + T(`până ${dl(w.e) === 'azi' ? '' : dl(w.e) + ' '}${hm(w.e)}`) + `<span style="font-size:13px;opacity:.75">încă ${rem(w.e - now)}</span>`, cap(w.f), w)).join('');
   }
   if (nxt.length) {
     h += H3('Urmează');
-    h += nxt.map(w => blk(w.c, emo(w.f), pill(w.c) + T(`${dl(w.s)} ${hm(w.s)} → ${dl(w.e) === dl(w.s) ? '' : dl(w.e) + ' '}${hm(w.e)}`) + `<span style="font-size:13px;opacity:.75">în ${rem(w.s - now)}</span>`, cap(w.f))).join('');
+    h += nxt.map(w => blk(w.c, emo(w.f), pill(w.c) + T(`${dl(w.s)} ${hm(w.s)} → ${dl(w.e) === dl(w.s) ? '' : dl(w.e) + ' '}${hm(w.e)}`) + `<span style="font-size:13px;opacity:.75">în ${rem(w.s - now)}</span>`, cap(w.f), w)).join('');
   }
   if (!act.length && ncC < 1 && !nxt.length) h += `<div style="font-size:14px;padding:6px 2px">✅ Nicio avertizare activă sau în următoarele 48h.</div>`;
 
   // --- Detalii ANM: mesajul complet + harta ---
-  const me = states[keyBy('sensor.mesaj_meteo_')[0]] || {}, txt = (me.attributes || {}).mesaj_complet || '';
-  const ids = String(S('sensor.anm_avertizare_id').state || '').split(',').map(x => x.trim()).filter(x => x && x !== '0' && !['unavailable', 'unknown', 'none'].includes(x)).reverse();
-  const txtS = String(txt);
-  const heads = [...txtS.matchAll(/MESAJ\s+(\d+)\s*\/\s*(\d+)/gi)].map(m => `${m[1]}/${m[2]}`);
-  const blocks = txtS.split(/MESAJ\s+\d+\s*\/\s*\d+/i).map(b => b.trim()).filter(Boolean);
-  const wxc = wx.filter(w => w.c >= 1);
   const msgHtml = blocks.map((b, i) => {
     const typ = (b.match(/(ATEN[ȚT]IONARE|AVERTIZARE|INFORMARE)\s+METEOROLOGIC[ĂA]/i) || [])[0] || 'MESAJ METEOROLOGIC';
     const cm = b.match(/COD\s+(GALBEN|PORTOCALIU|RO[ȘS]U)/i);
@@ -111,7 +117,7 @@ label: |-
     const rel = !!(p && wxc.some(w => Math.abs(w.s - p[0]) < 6e4 && Math.abs(w.e - p[1]) < 6e4));
     const col = CC[cc] || '#888', mid = ids[i];
     const img = mid ? `<img loading="lazy" src="https://images.weserv.nl/?url=${encodeURIComponent('https://www.meteoromania.ro/wp-content/plugins/meteo/harti/harta.svg.php?id_avertizare=' + mid)}" style="width:100%;max-width:380px;display:block;margin:10px auto 0;border-radius:8px;border:1.5px solid ${col}">` : '';
-    return `<div style="margin:10px 0;padding:10px 12px;border-left:4px solid ${col};background:color-mix(in srgb,${col} ${rel ? 13 : 5}%,transparent);border-radius:0 8px 8px 0;${rel ? '' : 'opacity:.72'}">
+    return `<div data-msg="1" data-s="${p ? p[0].getTime() : ''}" data-e="${p ? p[1].getTime() : ''}" data-c="${cc}" style="scroll-margin-top:90px;margin:10px 0;padding:10px 12px;border-left:4px solid ${col};background:color-mix(in srgb,${col} ${rel ? 13 : 5}%,transparent);border-radius:0 8px 8px 0;${rel ? '' : 'opacity:.72'}">
       <div style="display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px"><b style="font-size:14px">MESAJ ${heads[i] || i + 1}</b>${cc ? pill(cc) : ''}${rel ? '<span style="font-size:13px;font-weight:700">📍 Zona ta</span>' : ''}</div>
       <div style="font-size:13px;opacity:.75;margin-top:2px">${typ}</div>
       ${iv ? `<div style="font-size:14px;margin-top:6px">🕒 <b>${iv}</b></div>` : ''}
