@@ -46,8 +46,15 @@ Cardurile din [`examples/`](examples/) nu conțin niciun județ scris de mână:
 
 | Fișier | Conținut | Necesită |
 |--------|----------|----------|
-| [`lovelace_card_anm.yaml`](examples/lovelace_card_anm.yaml) | card pliabil cu rezumat pe fenomene, hartă și mesajul complet; apare doar când există avertizare | `expander-card`, `button-card`, `card-mod` |
-| [`lovelace_card_markdown.yaml`](examples/lovelace_card_markdown.yaml) | avertizări ANM active/viitoare + alertele nowcasting, într-un singur card | doar cardul Markdown standard |
+| [`lovelace_card_alerte_meteo.yaml`](examples/lovelace_card_alerte_meteo.yaml) | **cardul principal**: ANM + nowcasting într-un singur card pliabil; *acum* / *urmează* (≤48h), mesajele ANM complete cu hartă | `button-card` |
+| [`lovelace_card_markdown.yaml`](examples/lovelace_card_markdown.yaml) | variantă simplă, doar text | cardul Markdown standard |
+
+Antetul cardului principal se schimbă singur:
+
+- **fără avertizare**: antet neutru „NICIO AVERTIZARE METEO”, card colapsat;
+- **cu avertizare** (activă acum, nowcasting sau în următoarele 48h): antet colorat după cea mai gravă avertizare (galben / portocaliu / roșu), „AVERTIZARE METEO ACTIVĂ” și card expandat.
+
+Dacă îl pliezi sau îl expandezi manual, alegerea se păstrează până când starea (avertizare / fără avertizare) se schimbă.
 
 ## Licență
 
