@@ -7,6 +7,18 @@ Integrare Home Assistant care reunește, într-o singură integrare, două surse
 
 Provine din unificarea integrărilor [`alerta-anm-judet-romania`](https://github.com/dancucu/alerta-anm-judet-romania) (GPL-3.0) și [`alerta-nowcasting`](https://github.com/dancucu/alerta-nowcasting) (MIT), de `dancucu`.
 
+## Cerințe (de instalat înainte)
+
+| Ce | Pentru ce | Link |
+|----|-----------|------|
+| Home Assistant **2024.12** sau mai nou | integrarea (formularul de opțiuni folosește `config_entry` din Home Assistant) | — |
+| **button-card** (`custom:button-card`), card de dashboard | cardul principal din [`examples/lovelace_card_alerte_meteo.yaml`](examples/lovelace_card_alerte_meteo.yaml) | https://github.com/custom-cards/button-card |
+| acces la internet | datele vin de la ANM (`meteoromania.ro`); hărțile sunt afișate prin `images.weserv.nl` | — |
+
+Instalează **button-card** din Marketplace/HACS (categoria *Dashboard*/*Plugin*) înainte de a adăuga cardul. Cardul Markdown simplu din [`examples/lovelace_card_markdown.yaml`](examples/lovelace_card_markdown.yaml) nu are nevoie de nimic în plus. Alte integrări nu sunt necesare; biblioteca `requests` se instalează automat.
+
+> Dacă ai deja `alerta_anm_judet_romania` sau `alerta_nowcasting`, șterge-le înainte să adaugi această integrare: aceleași entități ar fi create de două ori (cu sufix `_2`).
+
 ## Instalare
 
 1. Adaugă acest repository ca *custom repository* în Marketplace/HACS, cu categoria **Integration**, folosind linkul complet:
