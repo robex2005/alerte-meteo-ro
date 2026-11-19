@@ -198,7 +198,12 @@ class ANMMessageSensor(Entity):
 
     @property
     def extra_state_attributes(self):
-        return self._attributes
+        # Județul e expus ca atribut, ca un card să nu depindă de numele lui.
+        return {
+            **self._attributes,
+            "judet": self._judet_nume,
+            "judet_cod": self._judet_cod,
+        }
 
     @property
     def icon(self):

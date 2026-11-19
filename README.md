@@ -40,6 +40,15 @@ Pentru județul ales (exemplu: Mureș):
 Atributele nowcasting sunt în limba română, cu diacritice; într-un template folosește ghilimele, de exemplu
 `state_attr('sensor.alerta_nowcasting_mures', 'Alerte active') | int(0)`.
 
+## Carduri Lovelace (universale)
+
+Cardurile din [`examples/`](examples/) nu conțin niciun județ scris de mână: își găsesc singure entitățile integrării și iau numele județului din atributul `judet` al lui `sensor.mesaj_meteo_<județ>`. Funcționează pentru orice județ ales la configurare; copiezi YAML-ul în dashboard, fără editări.
+
+| Fișier | Conținut | Necesită |
+|--------|----------|----------|
+| [`lovelace_card_anm.yaml`](examples/lovelace_card_anm.yaml) | card pliabil cu rezumat pe fenomene, hartă și mesajul complet; apare doar când există avertizare | `expander-card`, `button-card`, `card-mod` |
+| [`lovelace_card_markdown.yaml`](examples/lovelace_card_markdown.yaml) | avertizări ANM active/viitoare + alertele nowcasting, într-un singur card | doar cardul Markdown standard |
+
 ## Licență
 
 GPL-3.0 (vezi `LICENSE`). Partea de nowcasting provine din `alerta-nowcasting`, publicat sub licența MIT, Copyright (c) 2026 Dan.
