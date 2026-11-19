@@ -1,0 +1,45 @@
+# Alerte Meteo România
+
+Integrare Home Assistant care reunește, într-o singură integrare, două surse oficiale ANM (Meteo România):
+
+- **Avertizări meteo ANM** pe județ: mesajul complet, codul (galben / portocaliu / roșu), harta activă și culoarea județului pe hartă.
+- **Alerte nowcasting** (următoarele ore), câte un senzor pentru fiecare județ ales.
+
+Provine din unificarea integrărilor [`alerta-anm-judet-romania`](https://github.com/dancucu/alerta-anm-judet-romania) (GPL-3.0) și [`alerta-nowcasting`](https://github.com/dancucu/alerta-nowcasting) (MIT), de `dancucu`.
+
+## Instalare
+
+1. Adaugă acest repository ca *custom repository* în Marketplace/HACS (tip *Integration*): `robex2005/alerte-meteo-ro`.
+2. Instalează **Alerte Meteo România** și repornește Home Assistant.
+3. **Setări → Dispozitive și servicii → Adaugă integrare → Alerte Meteo România**.
+
+La configurare alegi:
+
+| Câmp | Descriere |
+|------|-----------|
+| Județ (avertizări ANM) | județul pentru care se afișează mesajul ANM |
+| Interval actualizare ANM | în minute (implicit 10) |
+| Activează alertele nowcasting | pornește senzorii nowcasting |
+| Județe nowcasting | unul sau mai multe județe; gol = județul ales pentru ANM |
+
+Setările se pot schimba ulterior din **Configurare** pe integrare.
+
+## Entități
+
+Pentru județul ales (exemplu: Mureș):
+
+| Entitate | Descriere |
+|----------|-----------|
+| `sensor.avertizari_meteo_anm` | toate avertizările ANM (atributul `avertizari`) |
+| `sensor.anm_avertizare_id` | ID-urile avertizărilor active |
+| `sensor.mesaj_meteo_mures` | `alerta` / `liniste`; atribute `tip_cod`, `mesaj_complet` |
+| `sensor.harta_meteo_activa` | URL-ul hărții active |
+| `sensor.culoare_harta_mures` | culoarea județului pe hartă; atribut `date_harti` |
+| `sensor.alerta_nowcasting_mures` | `alerta` / `liniste`; atribute `Alerte active`, `Culoare`, `Început`, `Sfârșit`, `semnalare`, `Zone`, `Fenomene`, `Titlu`, `Ultima actualizare` |
+
+Atributele nowcasting sunt în limba română, cu diacritice; într-un template folosește ghilimele, de exemplu
+`state_attr('sensor.alerta_nowcasting_mures', 'Alerte active') | int(0)`.
+
+## Licență
+
+GPL-3.0 (vezi `LICENSE`). Partea de nowcasting provine din `alerta-nowcasting`, publicat sub licența MIT, Copyright (c) 2026 Dan.

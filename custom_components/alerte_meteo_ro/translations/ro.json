@@ -1,0 +1,32 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Alerte Meteo România",
+        "description": "Avertizări ANM pentru un județ și alerte nowcasting.",
+        "data": {
+          "judet_cod": "Județ (avertizări ANM)",
+          "update_interval": "Interval actualizare ANM (minute)",
+          "nowcasting": "Activează alertele nowcasting",
+          "counties": "Județe nowcasting (gol = județul ales mai sus)"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "Integrarea este deja configurată."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Setări Alerte Meteo România",
+        "data": {
+          "judet_cod": "Județ (avertizări ANM)",
+          "update_interval": "Interval actualizare ANM (minute)",
+          "nowcasting": "Activează alertele nowcasting",
+          "counties": "Județe nowcasting (gol = județul ales mai sus)"
+        }
+      }
+    }
+  }
+}

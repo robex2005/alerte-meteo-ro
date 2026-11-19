@@ -1,0 +1,32 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Romania Weather Alerts",
+        "description": "ANM warnings for a county plus nowcasting alerts.",
+        "data": {
+          "judet_cod": "County (ANM warnings)",
+          "update_interval": "ANM update interval (minutes)",
+          "nowcasting": "Enable nowcasting alerts",
+          "counties": "Nowcasting counties (empty = the county chosen above)"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "The integration is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Romania Weather Alerts settings",
+        "data": {
+          "judet_cod": "County (ANM warnings)",
+          "update_interval": "ANM update interval (minutes)",
+          "nowcasting": "Enable nowcasting alerts",
+          "counties": "Nowcasting counties (empty = the county chosen above)"
+        }
+      }
+    }
+  }
+}
