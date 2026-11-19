@@ -24,6 +24,9 @@ styles:
     - padding: 0
     - border-radius: 12px
     - overflow: hidden
+    # stratul de click al button-card nu interceptează nimic; conținutul (antet pliabil,
+    # link ANM) își primește singur click-urile prin `pointer-events:auto` de mai jos
+    - pointer-events: none
   label:
     - text-align: left
     - font-size: 14px
@@ -119,7 +122,7 @@ label: |-
       ${img}</div>`;
   }).join('');
   let det = H3('Informații ANM · mesaj complet') + msgHtml;
-  det += `<div style="margin-top:14px;padding-top:10px;border-top:1px solid var(--divider-color);text-align:center"><a href="https://www.meteoromania.ro/avertizari/" target="_blank" rel="noopener" style="font-size:14px;font-weight:600;color:var(--primary-color);text-decoration:none">🔗 Avertizări pe meteoromania.ro (ANM)</a></div>`;
+  det += `<div style="margin-top:14px;padding-top:10px;border-top:1px solid var(--divider-color);text-align:center"><a href="https://www.meteoromania.ro/avertizari/" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" style="pointer-events:auto;font-size:14px;font-weight:600;color:var(--primary-color);text-decoration:none">🔗 Avertizări pe meteoromania.ro (ANM)</a></div>`;
 
   // --- Antet pliabil: titlu, culoare și stare deschis/închis după avertizare ---
   const top = Math.max(act.length ? act[0].c : 0, ncC, nxt.length ? nxt[0].c : 0);
@@ -137,7 +140,7 @@ label: |-
   // Antet compact: un singur rând și pe telefon (text mic, fără text suplimentar;
   // codul culorii se vede din culoarea antetului și din pastilele din card).
   return `<style>.amr summary{list-style:none}.amr summary::-webkit-details-marker{display:none}.amr[open] .amr-chev{transform:rotate(180deg)}.amr-chev{transition:transform .2s}</style>
-  <details class="amr" ${open ? 'open' : ''} ontoggle="try{localStorage.setItem('alerte_meteo_ro_card',JSON.stringify({status:'${status}',open:this.open}))}catch(e){}" style="text-align:left">
+  <details class="amr" ${open ? 'open' : ''} ontoggle="try{localStorage.setItem('alerte_meteo_ro_card',JSON.stringify({status:'${status}',open:this.open}))}catch(e){}" style="text-align:left;pointer-events:auto">
     <summary style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:9px 12px;background:${bg};color:${fg};font-weight:800;font-size:12.5px;line-height:1.2;text-transform:uppercase;letter-spacing:.2px">
       <ha-icon icon="${icon}" style="--mdc-icon-size:20px;flex:none"></ha-icon>
       <span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${title}</span>

@@ -9,7 +9,13 @@ Provine din unificarea integrărilor [`alerta-anm-judet-romania`](https://github
 
 ## Instalare
 
-1. Adaugă acest repository ca *custom repository* în Marketplace/HACS (tip *Integration*): `robex2005/alerte-meteo-ro`.
+1. Adaugă acest repository ca *custom repository* în Marketplace/HACS, cu categoria **Integration**, folosind linkul complet:
+
+   ```
+   https://github.com/robex2005/alerte-meteo-ro
+   ```
+
+   (Marketplace/HACS → meniul ⋮ → *Custom repositories* → lipești linkul → alegi *Integration* → *Add*.)
 2. Instalează **Alerte Meteo România** și repornește Home Assistant.
 3. **Setări → Dispozitive și servicii → Adaugă integrare → Alerte Meteo România**.
 
@@ -48,6 +54,16 @@ Cardurile din [`examples/`](examples/) nu conțin niciun județ scris de mână:
 |--------|----------|----------|
 | [`lovelace_card_alerte_meteo.yaml`](examples/lovelace_card_alerte_meteo.yaml) | **cardul principal**: ANM + nowcasting într-un singur card pliabil; *acum* / *urmează* (≤48h), mesajele ANM complete cu hartă | `button-card` |
 | [`lovelace_card_markdown.yaml`](examples/lovelace_card_markdown.yaml) | variantă simplă, doar text | cardul Markdown standard |
+
+### Cum arată cardul (telefon)
+
+| Avertizare activă acum + următoarele | Nowcasting activ | Nicio avertizare |
+|:---:|:---:|:---:|
+| ![Avertizare activă acum și următoarele](docs/images/card-activ-acum-urmeaza.png) | ![Nowcasting activ](docs/images/card-activ-nowcasting.png) | ![Nicio avertizare](docs/images/card-fara-avertizare.png) |
+
+Mesajele complete ANM, cu harta fiecărui mesaj, apar sub secțiunile *Acum* / *Urmează*:
+
+<p align="center"><img src="docs/images/card-detalii-anm.png" alt="Mesaje ANM cu hartă" width="320"></p>
 
 Antetul cardului principal se schimbă singur:
 
