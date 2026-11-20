@@ -1,5 +1,8 @@
 # Istoric versiuni
 
+## 1.7
+- Card: fenomenul se ia din mesajul ANM complet când lista scrie „conform textelor".
+
 ## 1.6
 - Detectare avertizări parțiale pe județ (zone de munte, altitudine, litoral) din harta ANM.
 - Senzorul `culoare_harta_<județ>` are atribute noi: `zone_partiale` și `culoare_zona`.
