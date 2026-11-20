@@ -32,6 +32,36 @@ def normalize_color(color_str):
     return None
 
 
+COD_CULOARE = {1: 'galben', 2: 'portocaliu', 3: 'rosu'}
+LAST_ZONES = {}  # zonele parțiale ale ultimei hărți verificate
+
+
+def check_zones(content, judet_cod):
+    """Zone parțiale ale județului (munte, altitudine, litoral) colorate pe hartă.
+
+    ANM desenează avertizările „local la munte” / „peste X m” ca zone separate
+    (id `conturMuntiJudet<COD><COD>_...`, `conturAlt1400Judet<COD><COD>_...`) cu clasa `codN`.
+    Returnează {zona: culoare} doar pentru zonele cu avertizare (cod1..cod3).
+    """
+    zones = {}
+    rank = {'galben': 1, 'portocaliu': 2, 'rosu': 3}
+    code = re.escape(judet_cod)
+    pat = re.compile(r'<[a-zA-Z]+\s[^>]*?id="contur(?:Munti|Alt\d+|Litoral)Judet' + code + code + r'_[^"]*"[^>]*>')
+    for tag in pat.findall(content):
+        cl = re.search(r'class="([^"]*)"', tag)
+        if not cl:
+            continue
+        classes = cl.group(1).split()
+        m = next((re.fullmatch(r'cod([123])', c) for c in classes if re.fullmatch(r'cod([123])', c)), None)
+        if not m:
+            continue
+        kind = classes[0]  # munte / alt1400 / alt400 / litoral ...
+        color = COD_CULOARE[int(m.group(1))]
+        if rank[color] > rank.get(zones.get(kind), 0):
+            zones[kind] = color
+    return zones
+
+
 def check_map(map_id, judet_cod='GL'):
     """Verifică culoarea județului pe harta ANM."""
     url = f"https://www.meteoromania.ro/wp-content/plugins/meteo/harti/harta.svg.php?id_avertizare={map_id}"
@@ -41,6 +71,8 @@ def check_map(map_id, judet_cod='GL'):
             return "eroare_http"
 
         content = response.text
+        LAST_ZONES.clear()
+        LAST_ZONES.update(check_zones(content, judet_cod))
         
         # 1. PARSARE CSS
         css_map = {}
@@ -107,8 +139,11 @@ if __name__ == "__main__":
     id_list = [x.strip() for x in ids_input.split(',') if x.strip()]
     
     results = {}
+    zone = {}
     for m_id in id_list:
         val = check_map(m_id, judet_cod)
         results[m_id] = val
-        
-    print(json.dumps({"date_harti": results}))
+        if LAST_ZONES:
+            zone[m_id] = dict(LAST_ZONES)
+
+    print(json.dumps({"date_harti": results, "zone_partiale": zone}))

@@ -56,13 +56,23 @@ const render = (states, cfg) => {
   const allW = ((S('sensor.avertizari_meteo_anm').attributes || {}).avertizari) || [];
   const wx = [], ncs = [];
   if (ANMJ) {
-    const mapC = colOf(String((states['sensor.culoare_harta_' + ANMJ.slug] || {}).state || '').toLowerCase());
+    const mapSt = states['sensor.culoare_harta_' + ANMJ.slug] || {};
+    const mapC = colOf(String(mapSt.state || '').toLowerCase());
+    // zone parțiale (munte / altitudine / litoral) colorate pe hartă, când județul întreg nu e colorat
+    const zA = (mapSt.attributes || {}).zone_partiale || {};
+    const zoneC = colOf(String((mapSt.attributes || {}).culoare_zona || '').toLowerCase());
+    const ZN = { munte: 'zone de munte', litoral: 'litoral' };
+    const zoneNames = [...new Set(Object.values(zA).flatMap(z => Object.keys(z)))].map(k => ZN[k] || (/^alt(\d+)$/.test(k) ? 'peste ' + k.replace('alt', '') + ' m' : k)).join(', ');
     allW.filter(w => w && typeof w === 'object' && w.judet === ANMJ.cod).forEach(w => {
       const p = parseIv(w.intervalul); if (!p) return;
       let c = parseInt(w.culoare, 10) || 0;
       // ANM trimite uneori `culoare: 0` pentru intervalul activ; atunci folosim culoarea județului de pe hartă
-      if (!c && p[0] <= now && now < p[1]) c = mapC;
-      wx.push({ c, s: p[0], e: p[1], f: w.fenomene_vizate || '', j: ANMJ.nume });
+      let loc = '';
+      if (!c && p[0] <= now && now < p[1]) {
+        c = mapC;
+        if (!c && zoneC) { c = zoneC; loc = zoneNames || 'zone locale'; }
+      }
+      wx.push({ c, s: p[0], e: p[1], f: w.fenomene_vizate || '', j: ANMJ.nume, loc });
     });
   }
   SELS.forEach(J => {
@@ -102,7 +112,7 @@ const render = (states, cfg) => {
   if (act.length || ncC >= 1) {
     h += H3('Acum');
     h += ncs.map(n => blk(n.c, '⚡', pill(n.c) + JL(n.j) + T(n.end ? `nowcasting · până ${n.end}` : 'nowcasting · acum'), cap(n.f) || 'Fenomen violent iminent')).join('');
-    h += act.map(w => blk(w.c, emo(w.f), pill(w.c) + T(`până ${dl(w.e) === 'azi' ? '' : dl(w.e) + ' '}${hm(w.e)}`) + `<span style="font-size:13px;opacity:.75">încă ${rem(w.e - now)}</span>`, cap(w.f), w)).join('');
+    h += act.map(w => blk(w.c, emo(w.f), pill(w.c) + (w.loc ? `<span style="font-size:13px;font-weight:700">📍 local · ${w.loc}</span>` : '') + T(`până ${dl(w.e) === 'azi' ? '' : dl(w.e) + ' '}${hm(w.e)}`) + `<span style="font-size:13px;opacity:.75">încă ${rem(w.e - now)}</span>`, cap(w.f), w)).join('');
   }
   if (nxt.length) {
     h += H3('Urmează');

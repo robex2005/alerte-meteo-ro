@@ -1,5 +1,10 @@
 # Istoric versiuni
 
+## 1.6
+- Detectare avertizări parțiale pe județ (zone de munte, altitudine, litoral) din harta ANM.
+- Senzorul `culoare_harta_<județ>` are atribute noi: `zone_partiale` și `culoare_zona`.
+- Card: dacă județul e verde dar zona de munte e colorată, arată „📍 local · zone de munte".
+
 ## 1.5
 - Remediere: editorul cardului dădea eroarea „Cannot read properties of undefined (reading 'judete')".
 

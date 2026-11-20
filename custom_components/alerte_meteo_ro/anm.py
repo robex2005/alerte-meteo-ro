@@ -433,6 +433,7 @@ class ANMMapColorSensor(Entity):
             if process.returncode == 0:
                 result = json.loads(stdout.decode())
                 date_harti = result.get("date_harti", {})
+                zone_partiale = result.get("zone_partiale", {})
                 
                 # Determinăm cea mai gravă culoare
                 priority = {"rosu": 4, "portocaliu": 3, "galben": 2, "informare": 1, "verde": 0}
@@ -444,9 +445,18 @@ class ANMMapColorSensor(Entity):
                         max_priority = priority.get(color, 0)
                         max_color = color
                 
+                # zone parțiale (munte / altitudine / litoral) colorate pe hartă, fără județul întreg
+                culoare_zona = "verde"
+                for zone in zone_partiale.values():
+                    for color in zone.values():
+                        if priority.get(color, 0) > priority.get(culoare_zona, 0):
+                            culoare_zona = color
+
                 self._state = max_color
                 self._attributes = {
                     "date_harti": date_harti,
+                    "zone_partiale": zone_partiale,
+                    "culoare_zona": culoare_zona,
                     "numar_harti_verificate": len(date_harti),
                     "judet_cod": self._judet_cod,
                     "friendly_name": f"Culoare Hartă {self._judet_nume}"

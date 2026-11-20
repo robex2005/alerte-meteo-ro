@@ -52,7 +52,7 @@ Pentru județul ales (exemplu: Mureș):
 | `sensor.anm_avertizare_id` | ID-urile avertizărilor active |
 | `sensor.mesaj_meteo_mures` | `alerta` / `liniste`; atribute `tip_cod`, `mesaj_complet` |
 | `sensor.harta_meteo_activa` | URL-ul hărții active |
-| `sensor.culoare_harta_mures` | culoarea județului pe hartă; atribut `date_harti` |
+| `sensor.culoare_harta_mures` | culoarea județului pe hartă; atribute `date_harti`, `zone_partiale` (munte / altitudine / litoral colorate pe hartă) și `culoare_zona` |
 | `sensor.alerta_nowcasting_mures` | `alerta` / `liniste`; atribute `Alerte active`, `Culoare`, `Început`, `Sfârșit`, `semnalare`, `Zone`, `Fenomene`, `Titlu`, `Ultima actualizare` |
 
 Atributele nowcasting sunt în limba română, cu diacritice; într-un template folosește ghilimele, de exemplu
