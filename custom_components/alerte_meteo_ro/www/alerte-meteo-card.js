@@ -53,7 +53,9 @@ const render = (states, cfg) => {
   
   // --- Date: avertizări ANM pentru județul ales + nowcasting ---
   const colOf = (x) => /ro[sș]u/.test(x) ? 3 : /portocal/.test(x) ? 2 : /galben/.test(x) ? 1 : 0;
-  const allW = ((S('sensor.avertizari_meteo_anm').attributes || {}).avertizari) || [];
+  // `avertizari` e listă doar când există avertizări; altfel ANM trimite textul "Nu exista avertizari"
+  const allWRaw = (S('sensor.avertizari_meteo_anm').attributes || {}).avertizari;
+  const allW = Array.isArray(allWRaw) ? allWRaw : [];
   const wx = [], ncs = [];
   if (ANMJ) {
     const mapSt = states['sensor.culoare_harta_' + ANMJ.slug] || {};
@@ -62,7 +64,7 @@ const render = (states, cfg) => {
     const zA = (mapSt.attributes || {}).zone_partiale || {};
     const zoneC = colOf(String((mapSt.attributes || {}).culoare_zona || '').toLowerCase());
     const ZN = { munte: 'zone de munte', litoral: 'litoral' };
-    const zoneNames = [...new Set(Object.values(zA).flatMap(z => Object.keys(z)))].map(k => ZN[k] || (/^alt(\d+)$/.test(k) ? 'peste ' + k.replace('alt', '') + ' m' : k)).join(', ');
+    const zoneNames = [...new Set(Object.values(zA).flatMap(z => (z && typeof z === 'object') ? Object.keys(z) : []))].map(k => ZN[k] || (/^alt(\d+)$/.test(k) ? 'peste ' + k.replace('alt', '') + ' m' : k)).join(', ');
     allW.filter(w => w && typeof w === 'object' && w.judet === ANMJ.cod).forEach(w => {
       const p = parseIv(w.intervalul); if (!p) return;
       let c = parseInt(w.culoare, 10) || 0;
