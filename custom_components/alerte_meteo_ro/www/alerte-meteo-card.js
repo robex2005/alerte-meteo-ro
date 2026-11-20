@@ -44,7 +44,7 @@ const render = (states, cfg) => {
   const dl = (d) => d.toDateString() === now.toDateString() ? 'azi' : d.toDateString() === new Date(now.getTime() + 864e5).toDateString() ? 'mâine' : `${['dum','lun','mar','mie','joi','vin','sâm'][d.getDay()]} ${pad(d.getDate())}.${pad(d.getMonth() + 1)}`;
   const rem = (ms) => { const m = Math.max(0, Math.round(ms / 60000)), h = Math.floor(m / 60); return h >= 24 ? `${Math.floor(h / 24)}z ${h % 24}h` : h > 0 ? `${h}h ${pad(m % 60)}m` : `${m} min`; };
   const cap = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
-  const emo = (s) => { const x = String(s || '').toLowerCase();
+  const emo = (s) => { const x = String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[șş]/g, 's').toLowerCase() + ' ' + String(s || '').toLowerCase();
     if (/grindin/.test(x)) return '🌨️'; if (/descărc|descarc|oraj|furtun/.test(x)) return '⛈️'; if (/canicul|căldur|caldur|disconfort termic/.test(x)) return '🥵';
     if (/\bger\b|temperaturi scăzute|frig/.test(x)) return '🥶'; if (/viscol/.test(x)) return '🌬️'; if (/ninsor|zăpad|zapad/.test(x)) return '❄️';
     if (/inundați|inundati|viitur/.test(x)) return '🌊'; if (/averse|instabilit|ploa|precipitați|precipitati/.test(x)) return '🌧️';

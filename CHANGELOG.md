@@ -1,6 +1,7 @@
 # Istoric versiuni
 
 ## 1.7
+- Card: pictograma fenomenului se potrivește și cu diacritice diferite.
 - Card: fenomenul se ia din mesajul ANM complet când lista scrie „conform textelor".
 
 ## 1.6
