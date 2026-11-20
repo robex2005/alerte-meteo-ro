@@ -186,6 +186,7 @@ class AlerteMeteoCard extends HTMLElement {
 }
 
 class AlerteMeteoCardEditor extends HTMLElement {
+  constructor() { super(); this._config = {}; }
   setConfig(config) { this._config = config || {}; this._render(); }
   set hass(hass) { this._hass = hass; this._render(); }
   _render() {

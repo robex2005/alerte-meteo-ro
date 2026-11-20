@@ -1,5 +1,8 @@
 # Istoric versiuni
 
+## 1.5
+- Remediere: editorul cardului dădea eroarea „Cannot read properties of undefined (reading 'judete')".
+
 ## 1.4
 - Avertizările ANM: un singur județ (cel ales în integrare); nowcasting: mai multe județe.
 - Card: casetele din editor se aplică doar nowcasting-ului; ANM rămâne pe județul integrării.
