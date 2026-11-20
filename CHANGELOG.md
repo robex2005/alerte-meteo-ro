@@ -1,5 +1,8 @@
 # Istoric versiuni
 
+## 2.0.1
+- Card: nu mai apare eroare JS (`allW.filter is not a function`) când ANM nu are avertizări și trimite textul „Nu exista avertizari” în loc de listă.
+
 ## 2.0
 - Notificări și pe WhatsApp, Telegram sau orice serviciu de notificare text, pe lângă aplicația Home Assistant.
 - Mesaje mai ușor de citit: bulină cu culoarea codului, intervalul pe rânduri separate, fenomenele ca listă.
