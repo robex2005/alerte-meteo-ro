@@ -94,12 +94,8 @@ const render = (states, cfg) => {
   const heads = [...txtS.matchAll(/MESAJ\s+(\d+)\s*\/\s*(\d+)/gi)].map(m => `${m[1]}/${m[2]}`);
   const blocks = txtS.split(/MESAJ\s+\d+\s*\/\s*\d+/i).map(b => b.trim()).filter(Boolean);
   // ANM scrie uneori „conform textelor” în loc de fenomen: îl luăm din mesajul complet cu același interval
-  const fenOf = (b) => ((b.match(/^\s*Fenomene[^:
-]*:\s*([^
-]+)/im) || [])[1] || '').trim();
-  const ivOf = (b) => parseIv((b.match(/^\s*Interval[^:
-]*:\s*([^
-]+)/im) || [])[1]);
+  const fenOf = (b) => ((b.match(/^\s*Fenomene[^:\n]*:\s*([^\n]+)/im) || [])[1] || '').trim();
+  const ivOf = (b) => parseIv((b.match(/^\s*Interval[^:\n]*:\s*([^\n]+)/im) || [])[1]);
   wx.forEach(w => {
     if (w.f && !/conform\s+text/i.test(w.f)) return;
     const b = blocks.find(x => { const p = ivOf(x); return p && Math.abs(w.s - p[0]) < 6e4 && Math.abs(w.e - p[1]) < 6e4; });
