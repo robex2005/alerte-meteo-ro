@@ -15,6 +15,7 @@ CONF_NOTIFY_MIN_LEVEL = "notify_min_level"  # galben / portocaliu / rosu
 CONF_NOTIFY_ANM = "notify_anm"
 CONF_NOTIFY_NOWCASTING = "notify_nowcasting"
 CONF_NOTIFY_END = "notify_end"
+CONF_NOTIFY_TEXT = "notify_text_services"  # alte servicii notify (ex. WhatsApp), doar text
 CONF_NOTIFY_URL = "notify_url"  # dashboard deschis la apăsarea notificării
 DEFAULT_API_URL ="https://www.meteoromania.ro/avertizari-nowcasting-xml.php"
 DEFAULT_ANM_INTERVAL = 10  # minute

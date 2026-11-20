@@ -10,3 +10,15 @@ test_notificare:
             - galben
             - portocaliu
             - rosu
+    scenariu:
+      required: false
+      default: proba
+      example: real
+      selector:
+        select:
+          options:
+            - proba
+            - real
+            - doua
+            - nowcasting
+            - final

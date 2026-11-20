@@ -25,6 +25,7 @@ from .const import (
     CONF_NOTIFY_MIN_LEVEL,
     CONF_NOTIFY_NOWCASTING,
     CONF_NOTIFY_SERVICES,
+    CONF_NOTIFY_TEXT,
     CONF_NOTIFY_URL,
     CONF_NOWCASTING,
     CONF_UPDATE_INTERVAL,
@@ -82,6 +83,7 @@ async def async_setup_entry(
         cfg.get(CONF_NOTIFY_NOWCASTING, True),
         cfg.get(CONF_NOTIFY_END, True),
         cfg.get(CONF_NOTIFY_URL, ""),
+        cfg.get(CONF_NOTIFY_TEXT) or [],
     )
     await notifier.async_load()
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {

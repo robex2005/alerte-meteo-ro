@@ -6,7 +6,7 @@
 
 <p align="center">
   <b>Avertizările ANM și alertele nowcasting, direct în Home Assistant.</b><br>
-  🟡 galben · 🟠 portocaliu · 🔴 roșu — pe județ, cu card Lovelace propriu
+  🟡 galben · 🟠 portocaliu · 🔴 roșu — pe județ, cu card Lovelace propriu și notificări
 </p>
 
 <p align="center">
@@ -19,8 +19,9 @@
 <p align="center">
   <a href="#instalare">Instalare</a> ·
   <a href="#configurare">Configurare</a> ·
+  <a href="#notificări">Notificări</a> ·
   <a href="#card">Card</a> ·
-  <a href="#entități">Entități</a> ·
+  <a href="#carduri-manuale-examples">Carduri manuale</a> ·
   <a href="CHANGELOG.md">Istoric</a>
 </p>
 
@@ -28,18 +29,28 @@
 
 Integrare Home Assistant pentru **avertizările meteo ANM** (pe județ) și **alertele nowcasting**, cu un card Lovelace propriu, care apare în lista de carduri, fără YAML.
 
-<p align="center">
-  <img src="docs/images/card-activ-acum-urmeaza.png" width="260" alt="Avertizare activă">
-  <img src="docs/images/card-fara-avertizare.png" width="260" alt="Fără avertizare">
-</p>
+<table align="center">
+<tr>
+<td valign="top" align="center">
+<b>Avertizări acum / urmează</b><br>
+<img src="docs/images/card-avertizari-active.png" width="300" alt="Avertizări acum / urmează"><br><br>
+<b>Nowcasting</b><br>
+<img src="docs/images/card-activ-nowcasting.png" width="300" alt="Nowcasting">
+</td>
+<td valign="top" align="center">
+<b>Mesaj ANM complet</b><br>
+<img src="docs/images/card-mesaj-anm.png" width="300" alt="Mesaj ANM complet">
+</td>
+</tr>
+</table>
 
 ## Ce face
 
 - **Avertizări ANM** pentru un singur județ: cod galben / portocaliu / roșu, *acum* și *urmează* (următoarele 48h), mesajele ANM complete cu harta.
-- **Avertizări parțiale** (zone de munte, altitudine, litoral), citite din harta ANM: „📍 local · zone de munte".
+- **Avertizări parțiale** (zone de munte, altitudine, litoral), citite din harta ANM: „📍 Zona ta".
 - **Nowcasting** pentru unul sau mai multe județe.
-- **Notificări pe telefon** prin aplicația Home Assistant, fără automatizări (început + încheiere avertizare).
-- **Card** `custom:alerte-meteo-card`: antet colorat și deschis când e avertizare, „Nicio avertizare meteo" și închis când nu e; atingi un bloc din rezumat și sare la mesajul complet.
+- **Notificări** în aplicația Home Assistant și pe WhatsApp / Telegram (orice serviciu text), fără automatizări: început + încheiere avertizare.
+- **Card** `custom:alerte-meteo-card`, compact pe mobil: cod, zonă, oră și fenomene unul sub altul; antet colorat și deschis când e avertizare, „Nicio avertizare meteo" și închis când nu e.
 
 ## Instalare
 
@@ -54,49 +65,47 @@ Cerințe: Home Assistant **2024.12** sau mai nou, acces la internet (date de la 
 | Câmp | Descriere |
 |------|-----------|
 | Județ avertizări ANM | **un singur județ** |
-| Interval actualizare | minute (implicit 10) |
-| Nowcasting | pornește senzorii nowcasting |
+| Interval actualizare ANM | minute (implicit 10) |
+| Activează alertele nowcasting | pornește senzorii nowcasting |
 | Județe nowcasting | **unul sau mai multe**; gol = județul ANM |
 
 Se pot schimba oricând din **Configurare** pe integrare.
 
-## Notificări pe telefon
+## Notificări
 
-Integrarea trimite singură notificări prin aplicația **Home Assistant Companion** (Android / iOS) — nu e nevoie de automatizări.
-
-1. Instalează aplicația pe telefon și conectează-o la Home Assistant (apare serviciul `notify.mobile_app_<telefon>`).
-2. Pe integrare → **Configurare** → bifează telefoanele la *Notificări pe telefoanele*.
+Integrarea trimite singură notificări — nu e nevoie de automatizări. Pe integrare → **Configurare**:
 
 | Câmp | Descriere |
 |------|-----------|
-| Notificări pe telefoanele | unul sau mai multe `mobile_app_*`; gol = fără notificări |
+| Notificări pe telefoanele | unul sau mai multe `mobile_app_*` (aplicația Home Assistant Companion); gol = fără |
+| Mesaje text și pe | orice serviciu `notify.*` care trimite doar text: WhatsApp, Telegram, grupuri notify |
 | Notifică de la codul | galben (toate) / portocaliu și roșu / doar roșu |
-| Avertizări ANM / Nowcasting | ce tipuri de alerte se trimit |
-| Notificare la încheiere | „✅ Alertă Meteo Finalizată" când nu mai e avertizare ANM |
-| Pagina deschisă | unde te duce apăsarea notificării, ex. `/lovelace/vreme` |
+| Notificări pentru avertizările ANM / nowcasting | ce tipuri de alerte se trimit |
+| Notificare când avertizarea ANM se încheie | „✅ Alertă Meteo Finalizată" |
+| Pagina deschisă la apăsarea notificării | ex. `/lovelace/vreme` |
 
-Cum arată:
+Pentru telefon: instalează aplicația Home Assistant (Android / iOS) și conectează-o — apare serviciul `notify.mobile_app_<telefon>`. Pentru WhatsApp / Telegram: configurează întâi serviciul `notify` respectiv în Home Assistant, apoi alege-l la *Mesaje text și pe*.
 
-```
-🟠 COD PORTOCALIU MUREȘ
-🕒 20 noiembrie, ora 10 – 21 noiembrie, ora 10
+Cum arată (același text în aplicație și pe WhatsApp):
 
-💨 Fenomene vizate:
-- intensificări ale vântului
-- ninsori
-```
+<table align="center">
+<tr>
+<td valign="top" align="center"><b>Avertizare ANM</b><br><img src="docs/images/notificare-whatsapp.png" width="300" alt="Avertizare ANM"></td>
+<td valign="top" align="center"><b>Nowcasting</b><br><img src="docs/images/notificare-nowcasting.png" width="300" alt="Nowcasting"></td>
+</tr>
+</table>
 
 - câte o notificare pentru fiecare avertizare **nouă** (nu se repetă la restart sau la reîncărcare);
 - portocaliu / roșu: sunet critic pe iOS, prioritate mare pe Android (canalul „Alerte meteo");
-- notificările aceluiași județ se înlocuiesc una pe alta (același `tag`);
+- notificările aceluiași județ se înlocuiesc una pe alta în aplicație (același `tag`);
 - numele județului din titlu/mesaj e mereu cel configurat (ANM) sau cel al alertei (nowcasting).
 
-**Test:** Instrumente pentru dezvoltatori → Acțiuni → `alerte_meteo_ro.test_notificare` (opțional `cod: galben|portocaliu|rosu`) trimite o notificare de probă pentru județul tău.
+**Test:** Instrumente pentru dezvoltatori → Acțiuni → `alerte_meteo_ro.test_notificare` — opțional `cod: galben|portocaliu|rosu` și `scenariu: proba|real|doua|nowcasting|final`.
 
 <details>
 <summary>Vrei control total? Automatizare manuală (exemplu)</summary>
 
-Lasă *Notificări pe telefoanele* gol și folosește senzorul de mesaj al județului tău (`sensor.mesaj_meteo_<judet>`). Numele și codul județului se iau din atributele senzorului (`judet`, `judet_cod`), deci textul e corect pentru orice județ:
+Lasă câmpurile de notificare goale și folosește senzorul de mesaj al județului tău (`sensor.mesaj_meteo_<judet>`). Numele și codul județului se iau din atributele senzorului (`judet`, `judet_cod`), deci textul e corect pentru orice județ:
 
 ```yaml
 alias: Notificare avertizare ANM
@@ -120,34 +129,42 @@ actions:
 
 ## Card
 
-Dashboard → **Editează** → **Adaugă card** → **Alerte Meteo România** (sau în YAML: `type: custom:alerte-meteo-card`). Se încarcă singur odată cu integrarea.
+Dashboard → **Editează** → **Adaugă card** → **Alerte Meteo România**. Se încarcă singur odată cu integrarea; în editor bifezi județele de nowcasting afișate. Avertizările ANM rămân pe județul integrării.
 
-În editor bifezi județele de nowcasting afișate; în YAML: `judete: [Mureș, Alba]` (nume sau cod, cu/fără diacritice). Avertizările ANM rămân pe județul integrării.
+În YAML:
 
-Varianta cu `button-card` și una Markdown simplă sunt în [`examples/`](examples/).
+```yaml
+type: custom:alerte-meteo-card
+judete:            # opțional: județele nowcasting afișate (nume sau cod, cu/fără diacritice)
+  - Mureș
+  - HR
+collapsed: true    # opțional: cardul pornește închis și când e avertizare
+```
 
-> **Carduri, template-uri sau automatizări scrise manual:** dacă folosești entități sau coduri de județ scrise de mână (ex. `sensor.mesaj_meteo_mures`, `sensor.alerta_nowcasting_mures`, `judet == 'MS'`), schimbă **codul și numele județului peste tot** unde apar, altfel vei vedea datele județului vechi. Cardul `custom:alerte-meteo-card` și exemplele din `examples/` își iau județul singure.
+| Opțiune | Implicit | Descriere |
+|---------|----------|-----------|
+| `judete` | toate județele nowcasting din integrare | listă de județe (nume sau cod) |
+| `collapsed` | `false` | `true` = pornește închis; deschis/închis manual se ține minte în browser |
 
-## Entități
+## Carduri manuale (`examples/`)
 
-Pentru județul ales (ex. Mureș):
+Dacă vrei să-ți faci singur cardul, în [`examples/`](examples/) sunt două variante gata de copiat (Dashboard → Adaugă card → Manual):
 
-| Entitate | Descriere |
-|----------|-----------|
-| `sensor.avertizari_meteo_anm` | toate avertizările ANM (atribut `avertizari`) |
-| `sensor.anm_avertizare_id` | ID-urile avertizărilor active |
-| `sensor.mesaj_meteo_mures` | `alerta` / `liniste`; atribute `tip_cod`, `mesaj_complet` |
-| `sensor.harta_meteo_activa` | URL-ul hărții active |
-| `sensor.culoare_harta_mures` | culoarea județului; atribute `date_harti`, `zone_partiale`, `culoare_zona` |
-| `sensor.alerta_nowcasting_mures` | `alerta` / `liniste`; atribute `Alerte active`, `Culoare`, `Început`, `Sfârșit`, `semnalare`, `Zone`, `Fenomene` |
+| Fișier | Necesită | Ce arată |
+|--------|----------|----------|
+| [`lovelace_card_alerte_meteo.yaml`](examples/lovelace_card_alerte_meteo.yaml) | `custom:button-card` | identic cu cardul integrării (capturile de mai sus), dar ca YAML pe care îl poți modifica |
+| [`lovelace_card_markdown.yaml`](examples/lovelace_card_markdown.yaml) | nimic (card Markdown) | listă simplă: avertizări ANM active / viitoare + nowcasting |
 
-Atributele nowcasting sunt în română, cu diacritice: `state_attr('sensor.alerta_nowcasting_mures', 'Alerte active') | int(0)`.
+Amândouă își găsesc singure județul din integrare — nu trebuie editate. În varianta `button-card`, opțiunile `judete` și `collapsed` sunt în primele rânduri din `label` (`const cfg = …`).
+
+> **Carduri, template-uri sau automatizări scrise de mână:** dacă folosești entități sau coduri de județ scrise manual (ex. `sensor.mesaj_meteo_mures`, `sensor.alerta_nowcasting_mures`, `judet == 'MS'`), schimbă **codul și numele județului peste tot** unde apar, altfel vei vedea datele județului vechi.
 
 ## Limite
 
 - Avertizările parțiale se detectează doar cât timp sunt active; pentru cele viitoare ANM nu dă date pe zone.
 - Hărțile sunt afișate prin `images.weserv.nl`.
+- Serviciile text (WhatsApp etc.) primesc doar text: fără sunet critic, fără link la apăsare.
 
 ## Istoric și licență
 
-Versiuni în [CHANGELOG.md](CHANGELOG.md). Licență **GPL-3.0**; provine din unificarea și înbunătățirea integrărilor [`alerta-anm-judet-romania`](https://github.com/dancucu/alerta-anm-judet-romania) (GPL-3.0) și [`alerta-nowcasting`](https://github.com/dancucu/alerta-nowcasting) (MIT) de `dancucu`. Date: Administrația Națională de Meteorologie.
+Versiuni în [CHANGELOG.md](CHANGELOG.md). Licență **GPL-3.0**; provine din unificarea și îmbunătățirea integrărilor [`alerta-anm-judet-romania`](https://github.com/dancucu/alerta-anm-judet-romania) (GPL-3.0) și [`alerta-nowcasting`](https://github.com/dancucu/alerta-nowcasting) (MIT) de `dancucu`. Date: Administrația Națională de Meteorologie.

@@ -23,6 +23,7 @@ from .const import (
     CONF_NOTIFY_MIN_LEVEL,
     CONF_NOTIFY_NOWCASTING,
     CONF_NOTIFY_SERVICES,
+    CONF_NOTIFY_TEXT,
     CONF_NOTIFY_URL,
     CONF_NOWCASTING,
     CONF_UPDATE_INTERVAL,
@@ -32,7 +33,7 @@ from .const import (
     NAME,
     ROMANIAN_COUNTIES,
 )
-from .notify import mobile_app_services
+from .notify import mobile_app_services, text_notify_services
 
 
 def _schema(hass: HomeAssistant, defaults: dict[str, Any]) -> vol.Schema:
@@ -40,6 +41,8 @@ def _schema(hass: HomeAssistant, defaults: dict[str, Any]) -> vol.Schema:
     phones = mobile_app_services(hass)
     # păstrăm și telefoanele alese anterior, chiar dacă acum nu sunt încărcate
     chosen = [s for s in defaults.get(CONF_NOTIFY_SERVICES, []) if s not in phones]
+    texts = text_notify_services(hass)
+    chosen_t = [s for s in defaults.get(CONF_NOTIFY_TEXT, []) if s not in texts]
     return vol.Schema(
         {
             vol.Required(
@@ -65,6 +68,15 @@ def _schema(hass: HomeAssistant, defaults: dict[str, Any]) -> vol.Schema:
                     options=phones + chosen,
                     multiple=True,
                     mode=SelectSelectorMode.LIST,
+                )
+            ),
+            vol.Optional(
+                CONF_NOTIFY_TEXT, default=defaults.get(CONF_NOTIFY_TEXT, [])
+            ): SelectSelector(
+                SelectSelectorConfig(
+                    options=texts + chosen_t,
+                    multiple=True,
+                    mode=SelectSelectorMode.DROPDOWN,
                 )
             ),
             vol.Required(

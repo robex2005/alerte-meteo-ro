@@ -1,5 +1,14 @@
 # Istoric versiuni
 
+## 1.11
+- Notificări și pe WhatsApp, Telegram sau orice serviciu de notificare text, pe lângă aplicația Home Assistant.
+- Mesaje mai ușor de citit: bulină cu culoarea codului, intervalul pe rânduri separate, fenomenele ca listă.
+- Alertele nowcasting au același format.
+- Card redesenat, compact pe mobil: codul, zona, ora și fenomenele, câte unul pe rând.
+- Mesajele ANM complete se văd direct, cu textul și harta.
+- Opțiune nouă `collapsed: true`: cardul pornește închis.
+- Exemplul `button-card` din `examples/` arată ca noul card.
+
 ## 1.10
 - Notificări pe telefon prin aplicația Home Assistant Companion, direct din integrare (fără automatizări): alegi telefoanele, codul minim, ANM / nowcasting, notificare la încheiere și pagina deschisă la apăsare.
 - Format ca în proiectele originale: titlu cu codul și județul, 🕒 interval, 💨 fenomene ca listă; sunet critic la portocaliu/roșu.

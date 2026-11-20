@@ -55,18 +55,25 @@ def _async_register_services(hass: HomeAssistant) -> None:
             notifier = data["notifier"]
             if not notifier.enabled:
                 continue
-            await notifier.async_send_test(data["judet_cod"], data["judet_nume"], level)
+            scen = call.data.get("scenariu", "proba")
+            if scen == "proba":
+                await notifier.async_send_test(data["judet_cod"], data["judet_nume"], level)
+            else:
+                await notifier.async_send_scenario(scen, data["judet_cod"], data["judet_nume"])
             sent = True
         if not sent:
             raise HomeAssistantError(
-                "Niciun telefon ales: Configurare integrare → Notificări pe telefoanele."
+                "Niciun telefon / serviciu ales: Configurare integrare → Notificări."
             )
 
     hass.services.async_register(
         DOMAIN,
         "test_notificare",
         _test,
-        schema=vol.Schema({vol.Optional("cod", default="portocaliu"): vol.In(["galben", "portocaliu", "rosu"])}),
+        schema=vol.Schema({
+            vol.Optional("cod", default="portocaliu"): vol.In(["galben", "portocaliu", "rosu"]),
+            vol.Optional("scenariu", default="proba"): vol.In(["proba", "real", "doua", "nowcasting", "final"]),
+        }),
     )
 
 
