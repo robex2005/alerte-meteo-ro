@@ -1,5 +1,8 @@
 # Istoric versiuni
 
+## 1.8
+- Card: textul fenomenului din mesajele ANM se decodează (entități HTML) și pictograma potrivită (💨 etc.) apare corect.
+
 ## 1.7
 - Card: pictograma fenomenului se potrivește și cu diacritice diferite.
 - Card: fenomenul se ia din mesajul ANM complet când lista scrie „conform textelor".
