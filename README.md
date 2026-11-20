@@ -45,6 +45,8 @@ Dashboard → **Editează** → **Adaugă card** → **Alerte Meteo România** (
 
 Varianta cu `button-card` și una Markdown simplă sunt în [`examples/`](examples/).
 
+> **Carduri, template-uri sau automatizări scrise manual:** dacă folosești entități sau coduri de județ scrise de mână (ex. `sensor.mesaj_meteo_mures`, `sensor.alerta_nowcasting_mures`, `judet == 'MS'`), schimbă **codul și numele județului peste tot** unde apar, altfel vei vedea datele județului vechi. Cardul `custom:alerte-meteo-card` și exemplele din `examples/` își iau județul singure.
+
 ## Entități
 
 Pentru județul ales (ex. Mureș):
