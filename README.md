@@ -1,8 +1,30 @@
-# Alerte Meteo România
+<p align="center">
+  <img src="custom_components/alerte_meteo_ro/brand/icon@2x.png" width="140" alt="Alerte Meteo România">
+</p>
 
-[![HACS](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://hacs.xyz)
-[![Validate](https://github.com/robex2005/alerte-meteo-ro/actions/workflows/validate.yml/badge.svg)](https://github.com/robex2005/alerte-meteo-ro/actions/workflows/validate.yml)
-[![Release](https://img.shields.io/github/v/release/robex2005/alerte-meteo-ro)](https://github.com/robex2005/alerte-meteo-ro/releases)
+<h1 align="center">⛈️ Alerte Meteo România</h1>
+
+<p align="center">
+  <b>Avertizările ANM și alertele nowcasting, direct în Home Assistant.</b><br>
+  🟡 galben · 🟠 portocaliu · 🔴 roșu — pe județ, cu card Lovelace propriu
+</p>
+
+<p align="center">
+  <a href="https://hacs.xyz"><img src="https://img.shields.io/badge/HACS-Custom-orange.svg" alt="HACS"></a>
+  <a href="https://github.com/robex2005/alerte-meteo-ro/actions/workflows/validate.yml"><img src="https://github.com/robex2005/alerte-meteo-ro/actions/workflows/validate.yml/badge.svg" alt="Validate"></a>
+  <a href="https://github.com/robex2005/alerte-meteo-ro/releases"><img src="https://img.shields.io/github/v/release/robex2005/alerte-meteo-ro" alt="Release"></a>
+  <img src="https://img.shields.io/badge/Home%20Assistant-2024.12%2B-41BDF5.svg" alt="Home Assistant 2024.12+">
+</p>
+
+<p align="center">
+  <a href="#instalare">Instalare</a> ·
+  <a href="#configurare">Configurare</a> ·
+  <a href="#card">Card</a> ·
+  <a href="#entități">Entități</a> ·
+  <a href="CHANGELOG.md">Istoric</a>
+</p>
+
+---
 
 Integrare Home Assistant pentru **avertizările meteo ANM** (pe județ) și **alertele nowcasting**, cu un card Lovelace propriu, care apare în lista de carduri, fără YAML.
 
