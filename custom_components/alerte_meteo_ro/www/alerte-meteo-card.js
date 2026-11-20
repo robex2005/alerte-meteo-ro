@@ -1,14 +1,24 @@
 /* Alerte Meteo România — card Lovelace (avertizări ANM + nowcasting).
  * Fără configurare: județul și entitățile vin din integrarea „Alerte Meteo România”.
- * Opțional: `judet: MS` (cod județ) dacă ai mai multe județe configurate.
+ * Opțional: `judet: Mureș` (nume sau cod, ex. MS) sau alegere din editorul vizual.
  * Încărcat automat de integrare; apare în lista de carduri „Alerte Meteo România”.
  * Fișier generat din examples/lovelace_card_alerte_meteo.yaml. */
+const JUDETE = {"AB": "Alba", "AR": "Arad", "AG": "Argeș", "BC": "Bacău", "BH": "Bihor", "BN": "Bistrița-Năsăud", "BT": "Botoșani", "BR": "Brăila", "BV": "Brașov", "B": "București", "BZ": "Buzău", "CL": "Călărași", "CS": "Caraș-Severin", "CJ": "Cluj", "CT": "Constanța", "CV": "Covasna", "DB": "Dâmbovița", "DJ": "Dolj", "GL": "Galați", "GR": "Giurgiu", "GJ": "Gorj", "HR": "Harghita", "HD": "Hunedoara", "IL": "Ialomița", "IS": "Iași", "IF": "Ilfov", "MM": "Maramureș", "MH": "Mehedinți", "MS": "Mureș", "NT": "Neamț", "OT": "Olt", "PH": "Prahova", "SJ": "Sălaj", "SM": "Satu Mare", "SB": "Sibiu", "SV": "Suceava", "TR": "Teleorman", "TM": "Timiș", "TL": "Tulcea", "VL": "Vâlcea", "VS": "Vaslui", "VN": "Vrancea"};
+const norm = (x) => String(x || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+// `judet` din configurare: cod (MS) sau nume (Mureș / mures / Alba), cu sau fără diacritice
+const resolveJudet = (v) => {
+  const n = norm(v); if (!n) return null;
+  for (const [cod, nume] of Object.entries(JUDETE)) if (norm(cod) === n || norm(nume) === n) return { cod, nume, slug: norm(nume) };
+  return null;
+};
+
 const render = (states, cfg) => {
   const S = (id) => states[id] || {};
   const now = new Date();
   // Entitățile integrării se descoperă după prefix; județul vine din integrare.
   const keyBy = (p) => Object.keys(states).filter(k => k.startsWith(p));
-  const JC = String((cfg && cfg.judet) || '').toUpperCase() || ((states[keyBy('sensor.culoare_harta_')[0]] || {}).attributes || {}).judet_cod || '';
+  const SEL = resolveJudet(cfg && cfg.judet);   // județ ales în card (opțional)
+  const JC = SEL ? SEL.cod : (((states[keyBy('sensor.culoare_harta_')[0]] || {}).attributes || {}).judet_cod || '');
   const MO = {ianuarie:0,februarie:1,martie:2,aprilie:3,mai:4,iunie:5,iulie:6,august:7,septembrie:8,octombrie:9,noiembrie:10,decembrie:11};
   const mkD = (x) => { let d = new Date(now.getFullYear(), MO[String(x[2]).toLowerCase()], parseInt(x[1], 10), parseInt(x[3], 10), 0, 0); if (d - now > 200 * 864e5) d = new Date(d.getFullYear() - 1, d.getMonth(), d.getDate(), d.getHours()); return d; };
   const parseIv = (s) => { const m = [...String(s || '').matchAll(/(\d+)\s+([a-zăâîșşțţ]+),\s*ora\s*(\d+)/gi)]; if (m.length < 2) return null; const a0 = mkD(m[0]); let e0 = mkD(m[1]); if (e0 < a0) e0 = new Date(e0.getFullYear() + 1, e0.getMonth(), e0.getDate(), e0.getHours()); return [a0, e0]; };
@@ -31,7 +41,7 @@ const render = (states, cfg) => {
     .map(w => { const p = parseIv(w.intervalul); return p ? { c: parseInt(w.culoare, 10) || 0, s: p[0], e: p[1], f: w.fenomene_vizate || '' } : null; })
     .filter(Boolean);
   const nks = keyBy('sensor.alerta_nowcasting_');
-  const nk = nks.find(k => (parseInt(((states[k] || {}).attributes || {})['Alerte active'], 10) || 0) > 0) || nks[0];
+  const nk = (SEL && nks.find(k => k === 'sensor.alerta_nowcasting_' + SEL.slug)) || nks.find(k => (parseInt(((states[k] || {}).attributes || {})['Alerte active'], 10) || 0) > 0) || nks[0];
   const na = (states[nk] || {}).attributes || {};
   if ((parseInt(na['Alerte active'], 10) || 0) > 0) {
     const cc0 = String(na['Culoare'] || '').toLowerCase();
@@ -42,7 +52,7 @@ const render = (states, cfg) => {
   const nxt = wx.filter(w => w.c >= 1 && w.s > now && w.s - now < 48 * 36e5).sort((p, q) => p.s - q.s);
   
   // --- Mesajele ANM complete (folosite și pentru salt din rezumat) ---
-  const me = states[keyBy('sensor.mesaj_meteo_')[0]] || {}, txt = (me.attributes || {}).mesaj_complet || '';
+  const me = states[(SEL && states['sensor.mesaj_meteo_' + SEL.slug]) ? 'sensor.mesaj_meteo_' + SEL.slug : keyBy('sensor.mesaj_meteo_')[0]] || {}, txt = (me.attributes || {}).mesaj_complet || '';
   const ids = String(S('sensor.anm_avertizare_id').state || '').split(',').map(x => x.trim()).filter(x => x && x !== '0' && !['unavailable', 'unknown', 'none'].includes(x)).reverse();
   const txtS = String(txt);
   const heads = [...txtS.matchAll(/MESAJ\s+(\d+)\s*\/\s*(\d+)/gi)].map(m => `${m[1]}/${m[2]}`);
@@ -145,7 +155,33 @@ class AlerteMeteoCard extends HTMLElement {
   }
   getCardSize() { return 4; }
   static getStubConfig() { return {}; }
+  static getConfigElement() { return document.createElement('alerte-meteo-card-editor'); }
 }
+
+class AlerteMeteoCardEditor extends HTMLElement {
+  setConfig(config) { this._config = config || {}; this._render(); }
+  set hass(hass) { this._hass = hass; if (this._form) this._form.hass = hass; }
+  _render() {
+    if (!this._form) {
+      this._form = document.createElement('ha-form');
+      this._form.computeLabel = (s) => s.label || s.name;
+      this._form.addEventListener('value-changed', (e) => {
+        const v = (e.detail.value || {}).judet;
+        const cfg = Object.assign({}, this._config);
+        if (v) cfg.judet = v; else delete cfg.judet;
+        this._config = cfg;
+        this.dispatchEvent(new CustomEvent('config-changed', { detail: { config: cfg }, bubbles: true, composed: true }));
+      });
+      this.appendChild(this._form);
+    }
+    const opts = [{ value: '', label: 'Automat (județul din integrare)' }].concat(
+      Object.entries(JUDETE).sort((a, b) => a[1].localeCompare(b[1], 'ro')).map(([cod, nume]) => ({ value: cod, label: nume })));
+    this._form.schema = [{ name: 'judet', label: 'Județ', selector: { select: { options: opts, mode: 'dropdown' } } }];
+    this._form.data = { judet: (resolveJudet(this._config.judet) || {}).cod || '' };
+    if (this._hass) this._form.hass = this._hass;
+  }
+}
+if (!customElements.get('alerte-meteo-card-editor')) customElements.define('alerte-meteo-card-editor', AlerteMeteoCardEditor);
 if (!customElements.get('alerte-meteo-card')) customElements.define('alerte-meteo-card', AlerteMeteoCard);
 window.customCards = window.customCards || [];
 if (!window.customCards.some(c => c.type === 'alerte-meteo-card')) {

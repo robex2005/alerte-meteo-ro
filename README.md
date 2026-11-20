@@ -71,7 +71,7 @@ Cardul își ia județul din integrare (cel ales la configurare) și își găse
 type: custom:alerte-meteo-card
 ```
 
-Dacă ai configurat mai multe județe, poți alege unul cu codul lui: `judet: MS`. Dacă nu apare în lista de carduri, reîncarcă pagina cu cache-ul șters (Ctrl+F5 / în aplicație: Setări → Aplicație → Șterge cache frontend).
+Județul se poate alege și din editorul vizual al cardului (listă cu numele județelor) sau în YAML, cu nume sau cod, cu sau fără diacritice: `judet: Mureș`, `judet: alba`, `judet: MS`. Avertizările ANM pot fi afișate pentru orice județ; nowcasting apare pentru județele adăugate în integrare. Dacă nu apare în lista de carduri, reîncarcă pagina cu cache-ul șters (Ctrl+F5 / în aplicație: Setări → Aplicație → Șterge cache frontend).
 
 ## Carduri Lovelace din exemple (YAML)
 
