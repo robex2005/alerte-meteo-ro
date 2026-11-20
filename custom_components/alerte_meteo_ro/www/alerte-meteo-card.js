@@ -38,10 +38,15 @@ const render = (states, cfg) => {
   const CN = ['', 'galben', 'portocaliu', 'roșu'], CC = ['', '#f1c40f', '#e67e22', '#e74c3c'], TX = ['', '#000', '#000', '#fff'];
   
   // --- Date: avertizări ANM pentru județul ales + nowcasting ---
+  const mapSt = String((states['sensor.culoare_harta_' + (SEL ? SEL.slug : '')] || {}).state || '').toLowerCase();
+  const mapC = /ro[sș]u/.test(mapSt) ? 3 : /portocal/.test(mapSt) ? 2 : /galben/.test(mapSt) ? 1 : 0;
   let ncC = 0, ncEnd = '', ncF = '';
   const wx = (((S('sensor.avertizari_meteo_anm').attributes || {}).avertizari) || [])
     .filter(w => w && typeof w === 'object' && JC && w.judet === JC)
-    .map(w => { const p = parseIv(w.intervalul); return p ? { c: parseInt(w.culoare, 10) || 0, s: p[0], e: p[1], f: w.fenomene_vizate || '' } : null; })
+    .map(w => { const p = parseIv(w.intervalul); if (!p) return null; let c = parseInt(w.culoare, 10) || 0;
+      // ANM trimite uneori `culoare: 0` pentru intervalul activ; atunci folosim culoarea județului de pe hartă
+      if (!c && p[0] <= now && now < p[1]) c = mapC;
+      return { c, s: p[0], e: p[1], f: w.fenomene_vizate || '' }; })
     .filter(Boolean);
   const nks = keyBy('sensor.alerta_nowcasting_');
   const nk = (SEL && nks.find(k => k === 'sensor.alerta_nowcasting_' + SEL.slug)) || nks.find(k => (parseInt(((states[k] || {}).attributes || {})['Alerte active'], 10) || 0) > 0) || nks[0];
