@@ -29,20 +29,9 @@
 
 Integrare Home Assistant pentru **avertizările meteo ANM** (pe județ) și **alertele nowcasting**, cu un card Lovelace propriu, care apare în lista de carduri, fără YAML.
 
-<table align="center">
-<tr>
-<td valign="top" align="center">
-<b>Avertizări acum / urmează</b><br>
-<img src="docs/images/card-avertizari-active.png" width="300" alt="Avertizări acum / urmează"><br><br>
-<b>Nowcasting</b><br>
-<img src="docs/images/card-activ-nowcasting.png" width="300" alt="Nowcasting">
-</td>
-<td valign="top" align="center">
-<b>Mesaj ANM complet</b><br>
-<img src="docs/images/card-mesaj-anm.png" width="300" alt="Mesaj ANM complet">
-</td>
-</tr>
-</table>
+<p align="center">
+  <img src="docs/images/galerie-card.png" width="640" alt="Avertizări acum / urmează, nowcasting și mesaj ANM complet">
+</p>
 
 ## Ce face
 
@@ -88,12 +77,9 @@ Pentru telefon: instalează aplicația Home Assistant (Android / iOS) și conect
 
 Cum arată (același text în aplicație și pe WhatsApp):
 
-<table align="center">
-<tr>
-<td valign="top" align="center"><b>Avertizare ANM</b><br><img src="docs/images/notificare-whatsapp.png" width="300" alt="Avertizare ANM"></td>
-<td valign="top" align="center"><b>Nowcasting</b><br><img src="docs/images/notificare-nowcasting.png" width="300" alt="Nowcasting"></td>
-</tr>
-</table>
+<p align="center">
+  <img src="docs/images/galerie-notificari.png" width="640" alt="Notificări: avertizare ANM și nowcasting">
+</p>
 
 - câte o notificare pentru fiecare avertizare **nouă** (nu se repetă la restart sau la reîncărcare);
 - portocaliu / roșu: sunet critic pe iOS, prioritate mare pe Android (canalul „Alerte meteo");
