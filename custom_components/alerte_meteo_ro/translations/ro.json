@@ -3,12 +3,18 @@
     "step": {
       "user": {
         "title": "Alerte Meteo România",
-        "description": "Avertizări ANM pentru un județ și alerte nowcasting.",
+        "description": "Avertizări ANM pentru un județ și alerte nowcasting. Opțional: notificări pe telefon prin aplicația Home Assistant.",
         "data": {
           "judet_cod": "Județ avertizări ANM (un singur județ)",
           "update_interval": "Interval actualizare ANM (minute)",
           "nowcasting": "Activează alertele nowcasting",
-          "counties": "Județe nowcasting (poți alege mai multe; gol = județul ANM)"
+          "counties": "Județe nowcasting (poți alege mai multe; gol = județul ANM)",
+          "notify_services": "Notificări pe telefoanele (aplicația Home Assistant; gol = fără notificări)",
+          "notify_min_level": "Notifică de la codul",
+          "notify_anm": "Notificări pentru avertizările ANM",
+          "notify_nowcasting": "Notificări pentru alertele nowcasting",
+          "notify_end": "Notificare când avertizarea ANM se încheie",
+          "notify_url": "Pagina deschisă la apăsarea notificării (ex. /lovelace/vreme)"
         }
       }
     },
@@ -24,7 +30,34 @@
           "judet_cod": "Județ avertizări ANM (un singur județ)",
           "update_interval": "Interval actualizare ANM (minute)",
           "nowcasting": "Activează alertele nowcasting",
-          "counties": "Județe nowcasting (poți alege mai multe; gol = județul ANM)"
+          "counties": "Județe nowcasting (poți alege mai multe; gol = județul ANM)",
+          "notify_services": "Notificări pe telefoanele (aplicația Home Assistant; gol = fără notificări)",
+          "notify_min_level": "Notifică de la codul",
+          "notify_anm": "Notificări pentru avertizările ANM",
+          "notify_nowcasting": "Notificări pentru alertele nowcasting",
+          "notify_end": "Notificare când avertizarea ANM se încheie",
+          "notify_url": "Pagina deschisă la apăsarea notificării (ex. /lovelace/vreme)"
+        }
+      }
+    }
+  },
+  "selector": {
+    "notify_min_level": {
+      "options": {
+        "galben": "Galben (toate)",
+        "portocaliu": "Portocaliu și roșu",
+        "rosu": "Doar roșu"
+      }
+    }
+  },
+  "services": {
+    "test_notificare": {
+      "name": "Notificare de probă",
+      "description": "Trimite o notificare de probă pe telefoanele alese, pentru județul configurat.",
+      "fields": {
+        "cod": {
+          "name": "Cod",
+          "description": "galben, portocaliu sau rosu"
         }
       }
     }

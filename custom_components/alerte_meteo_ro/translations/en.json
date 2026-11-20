@@ -3,12 +3,18 @@
     "step": {
       "user": {
         "title": "Romania Weather Alerts",
-        "description": "ANM warnings for a county plus nowcasting alerts.",
+        "description": "ANM warnings for one county and nowcasting alerts. Optional: phone notifications through the Home Assistant app.",
         "data": {
-          "judet_cod": "ANM warnings county (one county only)",
+          "judet_cod": "ANM warnings county (single county)",
           "update_interval": "ANM update interval (minutes)",
           "nowcasting": "Enable nowcasting alerts",
-          "counties": "Nowcasting counties (several allowed; empty = the ANM county)"
+          "counties": "Nowcasting counties (multiple allowed; empty = ANM county)",
+          "notify_services": "Notify these phones (Home Assistant app; empty = no notifications)",
+          "notify_min_level": "Notify from level",
+          "notify_anm": "Notify ANM warnings",
+          "notify_nowcasting": "Notify nowcasting alerts",
+          "notify_end": "Notify when the ANM warning ends",
+          "notify_url": "Page opened when tapping the notification (e.g. /lovelace/weather)"
         }
       }
     },
@@ -21,10 +27,37 @@
       "init": {
         "title": "Romania Weather Alerts settings",
         "data": {
-          "judet_cod": "ANM warnings county (one county only)",
+          "judet_cod": "ANM warnings county (single county)",
           "update_interval": "ANM update interval (minutes)",
           "nowcasting": "Enable nowcasting alerts",
-          "counties": "Nowcasting counties (several allowed; empty = the ANM county)"
+          "counties": "Nowcasting counties (multiple allowed; empty = ANM county)",
+          "notify_services": "Notify these phones (Home Assistant app; empty = no notifications)",
+          "notify_min_level": "Notify from level",
+          "notify_anm": "Notify ANM warnings",
+          "notify_nowcasting": "Notify nowcasting alerts",
+          "notify_end": "Notify when the ANM warning ends",
+          "notify_url": "Page opened when tapping the notification (e.g. /lovelace/weather)"
+        }
+      }
+    }
+  },
+  "selector": {
+    "notify_min_level": {
+      "options": {
+        "galben": "Yellow (all)",
+        "portocaliu": "Orange and red",
+        "rosu": "Red only"
+      }
+    }
+  },
+  "services": {
+    "test_notificare": {
+      "name": "Test notification",
+      "description": "Sends a sample notification to the selected phones for the configured county.",
+      "fields": {
+        "cod": {
+          "name": "Level",
+          "description": "galben, portocaliu or rosu"
         }
       }
     }

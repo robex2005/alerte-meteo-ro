@@ -9,7 +9,14 @@ CONF_COUNTIES = "counties"  # județele pentru nowcasting
 CONF_JUDET_COD = "judet_cod"  # județul pentru avertizările ANM (cod auto, ex. MS)
 CONF_UPDATE_INTERVAL = "update_interval"  # minute, avertizări ANM
 CONF_NOWCASTING = "nowcasting"  # activează senzorii nowcasting
-DEFAULT_API_URL = "https://www.meteoromania.ro/avertizari-nowcasting-xml.php"
+# Notificări prin aplicația companion
+CONF_NOTIFY_SERVICES = "notify_services"  # listă notify.mobile_app_*
+CONF_NOTIFY_MIN_LEVEL = "notify_min_level"  # galben / portocaliu / rosu
+CONF_NOTIFY_ANM = "notify_anm"
+CONF_NOTIFY_NOWCASTING = "notify_nowcasting"
+CONF_NOTIFY_END = "notify_end"
+CONF_NOTIFY_URL = "notify_url"  # dashboard deschis la apăsarea notificării
+DEFAULT_API_URL ="https://www.meteoromania.ro/avertizari-nowcasting-xml.php"
 DEFAULT_ANM_INTERVAL = 10  # minute
 
 # Județele României cu abrevierile oficiale (avertizări ANM)

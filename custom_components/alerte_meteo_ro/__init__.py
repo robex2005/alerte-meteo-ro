@@ -8,7 +8,9 @@ from homeassistant.components import frontend
 from homeassistant.components.http import StaticPathConfig
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, ServiceCall
+from homeassistant.exceptions import HomeAssistantError
+import voluptuous as vol
 
 from .const import DOMAIN
 
@@ -22,6 +24,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data.setdefault(DOMAIN, {})
     await _async_register_card(hass)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    _async_register_services(hass)
     entry.async_on_unload(entry.add_update_listener(_async_reload_on_update))
     return True
 
@@ -36,6 +39,35 @@ async def _async_register_card(hass: HomeAssistant) -> None:
     version = path.stat().st_mtime_ns  # URL nou la fiecare actualizare => fără cache vechi
     frontend.add_extra_js_url(hass, f"{url}?v={version}")
     hass.data[DOMAIN]["card_registered"] = True
+
+
+def _async_register_services(hass: HomeAssistant) -> None:
+    """Serviciul alerte_meteo_ro.test_notificare (notificare de probă pe telefoanele alese)."""
+    if hass.services.has_service(DOMAIN, "test_notificare"):
+        return
+
+    async def _test(call: ServiceCall) -> None:
+        level = {"galben": 1, "portocaliu": 2, "rosu": 3}.get(call.data.get("cod", "portocaliu"), 2)
+        sent = False
+        for data in list(hass.data.get(DOMAIN, {}).values()):
+            if not isinstance(data, dict) or "notifier" not in data:
+                continue
+            notifier = data["notifier"]
+            if not notifier.enabled:
+                continue
+            await notifier.async_send_test(data["judet_cod"], data["judet_nume"], level)
+            sent = True
+        if not sent:
+            raise HomeAssistantError(
+                "Niciun telefon ales: Configurare integrare → Notificări pe telefoanele."
+            )
+
+    hass.services.async_register(
+        DOMAIN,
+        "test_notificare",
+        _test,
+        schema=vol.Schema({vol.Optional("cod", default="portocaliu"): vol.In(["galben", "portocaliu", "rosu"])}),
+    )
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:

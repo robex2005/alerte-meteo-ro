@@ -20,12 +20,20 @@ from .const import (
     CONF_API_URL,
     CONF_COUNTIES,
     CONF_JUDET_COD,
+    CONF_NOTIFY_ANM,
+    CONF_NOTIFY_END,
+    CONF_NOTIFY_MIN_LEVEL,
+    CONF_NOTIFY_NOWCASTING,
+    CONF_NOTIFY_SERVICES,
+    CONF_NOTIFY_URL,
     CONF_NOWCASTING,
     CONF_UPDATE_INTERVAL,
     DEFAULT_ANM_INTERVAL,
     DEFAULT_API_URL,
+    DOMAIN,
     JUDETE,
 )
+from .notify import AlerteNotifier
 from .nowcasting import AlerteNowcastingCoordinator, AlerteNowcastingSensor
 
 _LOGGER = logging.getLogger(__name__)
@@ -60,6 +68,28 @@ async def async_setup_entry(
         await map_sensor.async_update()
         await color_sensor.async_update()
 
+        await notifier.async_check_anm(
+            alert_sensor._attributes.get("avertizari"), judet_cod, judet_nume
+        )
+
+    # --- Notificări aplicație companion ---
+    notifier = AlerteNotifier(
+        hass,
+        entry.entry_id,
+        cfg.get(CONF_NOTIFY_SERVICES) or [],
+        cfg.get(CONF_NOTIFY_MIN_LEVEL, "galben"),
+        cfg.get(CONF_NOTIFY_ANM, True),
+        cfg.get(CONF_NOTIFY_NOWCASTING, True),
+        cfg.get(CONF_NOTIFY_END, True),
+        cfg.get(CONF_NOTIFY_URL, ""),
+    )
+    await notifier.async_load()
+    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {
+        "notifier": notifier,
+        "judet_cod": judet_cod,
+        "judet_nume": judet_nume,
+    }
+
     # Prima actualizare înainte de adăugare, ca senzorii să aibă valori imediat.
     await update_anm()
     entry.async_on_unload(async_track_time_interval(hass, update_anm, interval))
@@ -73,6 +103,17 @@ async def async_setup_entry(
             hass, cfg.get(CONF_API_URL, DEFAULT_API_URL), counties
         )
         await coordinator.async_config_entry_first_refresh()
+
+        async def _notify_nowcasting() -> None:
+            data = coordinator.data or {}
+            await notifier.async_check_nowcasting(data.get("active_alerts", []), counties)
+
+        def _on_nowcasting_update() -> None:
+            hass.async_create_task(_notify_nowcasting())
+
+        if notifier.enabled:
+            await _notify_nowcasting()
+            entry.async_on_unload(coordinator.async_add_listener(_on_nowcasting_update))
         entities.extend(
             AlerteNowcastingSensor(coordinator, entry, county) for county in counties
         )

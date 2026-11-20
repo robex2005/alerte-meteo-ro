@@ -1,5 +1,10 @@
 # Istoric versiuni
 
+## 1.10
+- Notificări pe telefon prin aplicația Home Assistant Companion, direct din integrare (fără automatizări): alegi telefoanele, codul minim, ANM / nowcasting, notificare la încheiere și pagina deschisă la apăsare.
+- Format ca în proiectele originale: titlu cu codul și județul, 🕒 interval, 💨 fenomene ca listă; sunet critic la portocaliu/roșu.
+- Fără duplicate: avertizările deja trimise sunt ținute minte și după restart.
+
 ## 1.9
 - README rescris, succint.
 - Validări automate (HACS, hassfest, sintaxă card) pentru adăugarea în HACS.

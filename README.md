@@ -38,6 +38,7 @@ Integrare Home Assistant pentru **avertizările meteo ANM** (pe județ) și **al
 - **Avertizări ANM** pentru un singur județ: cod galben / portocaliu / roșu, *acum* și *urmează* (următoarele 48h), mesajele ANM complete cu harta.
 - **Avertizări parțiale** (zone de munte, altitudine, litoral), citite din harta ANM: „📍 local · zone de munte".
 - **Nowcasting** pentru unul sau mai multe județe.
+- **Notificări pe telefon** prin aplicația Home Assistant, fără automatizări (început + încheiere avertizare).
 - **Card** `custom:alerte-meteo-card`: antet colorat și deschis când e avertizare, „Nicio avertizare meteo" și închis când nu e; atingi un bloc din rezumat și sare la mesajul complet.
 
 ## Instalare
@@ -58,6 +59,64 @@ Cerințe: Home Assistant **2024.12** sau mai nou, acces la internet (date de la 
 | Județe nowcasting | **unul sau mai multe**; gol = județul ANM |
 
 Se pot schimba oricând din **Configurare** pe integrare.
+
+## Notificări pe telefon
+
+Integrarea trimite singură notificări prin aplicația **Home Assistant Companion** (Android / iOS) — nu e nevoie de automatizări.
+
+1. Instalează aplicația pe telefon și conectează-o la Home Assistant (apare serviciul `notify.mobile_app_<telefon>`).
+2. Pe integrare → **Configurare** → bifează telefoanele la *Notificări pe telefoanele*.
+
+| Câmp | Descriere |
+|------|-----------|
+| Notificări pe telefoanele | unul sau mai multe `mobile_app_*`; gol = fără notificări |
+| Notifică de la codul | galben (toate) / portocaliu și roșu / doar roșu |
+| Avertizări ANM / Nowcasting | ce tipuri de alerte se trimit |
+| Notificare la încheiere | „✅ Alertă Meteo Finalizată" când nu mai e avertizare ANM |
+| Pagina deschisă | unde te duce apăsarea notificării, ex. `/lovelace/vreme` |
+
+Cum arată:
+
+```
+🟠 COD PORTOCALIU MUREȘ
+🕒 20 noiembrie, ora 10 – 21 noiembrie, ora 10
+
+💨 Fenomene vizate:
+- intensificări ale vântului
+- ninsori
+```
+
+- câte o notificare pentru fiecare avertizare **nouă** (nu se repetă la restart sau la reîncărcare);
+- portocaliu / roșu: sunet critic pe iOS, prioritate mare pe Android (canalul „Alerte meteo");
+- notificările aceluiași județ se înlocuiesc una pe alta (același `tag`);
+- numele județului din titlu/mesaj e mereu cel configurat (ANM) sau cel al alertei (nowcasting).
+
+**Test:** Instrumente pentru dezvoltatori → Acțiuni → `alerte_meteo_ro.test_notificare` (opțional `cod: galben|portocaliu|rosu`) trimite o notificare de probă pentru județul tău.
+
+<details>
+<summary>Vrei control total? Automatizare manuală (exemplu)</summary>
+
+Lasă *Notificări pe telefoanele* gol și folosește senzorul de mesaj al județului tău (`sensor.mesaj_meteo_<judet>`). Numele și codul județului se iau din atributele senzorului (`judet`, `judet_cod`), deci textul e corect pentru orice județ:
+
+```yaml
+alias: Notificare avertizare ANM
+triggers:
+  - trigger: state
+    entity_id: sensor.mesaj_meteo_<judet>   # ex. sensor.mesaj_meteo_cluj
+    to: alerta
+actions:
+  - action: notify.mobile_app_<telefon>     # telefonul tău
+    data:
+      title: >-
+        ⚠️ Cod {{ trigger.to_state.attributes.tip_cod }}
+        {{ trigger.to_state.attributes.judet | upper }}
+      message: "{{ trigger.to_state.attributes.mesaj_complet[:250] }}"
+      data:
+        url: /lovelace/vreme
+        tag: "alerta-meteo-{{ trigger.to_state.attributes.judet_cod | lower }}"
+```
+
+</details>
 
 ## Card
 

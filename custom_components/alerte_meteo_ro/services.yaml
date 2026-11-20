@@ -1,0 +1,12 @@
+test_notificare:
+  fields:
+    cod:
+      required: false
+      default: portocaliu
+      example: portocaliu
+      selector:
+        select:
+          options:
+            - galben
+            - portocaliu
+            - rosu

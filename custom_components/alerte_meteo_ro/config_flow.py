@@ -6,12 +6,24 @@ from typing import Any
 import voluptuous as vol
 
 from homeassistant import config_entries
-from homeassistant.core import callback
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers.selector import (
+    SelectSelector,
+    SelectSelectorConfig,
+    SelectSelectorMode,
+    TextSelector,
+)
 
 from .const import (
     CONF_COUNTIES,
     CONF_JUDET_COD,
+    CONF_NOTIFY_ANM,
+    CONF_NOTIFY_END,
+    CONF_NOTIFY_MIN_LEVEL,
+    CONF_NOTIFY_NOWCASTING,
+    CONF_NOTIFY_SERVICES,
+    CONF_NOTIFY_URL,
     CONF_NOWCASTING,
     CONF_UPDATE_INTERVAL,
     DEFAULT_ANM_INTERVAL,
@@ -20,10 +32,14 @@ from .const import (
     NAME,
     ROMANIAN_COUNTIES,
 )
+from .notify import mobile_app_services
 
 
-def _schema(defaults: dict[str, Any]) -> vol.Schema:
+def _schema(hass: HomeAssistant, defaults: dict[str, Any]) -> vol.Schema:
     """Schema comună pentru configurare inițială și opțiuni."""
+    phones = mobile_app_services(hass)
+    # păstrăm și telefoanele alese anterior, chiar dacă acum nu sunt încărcate
+    chosen = [s for s in defaults.get(CONF_NOTIFY_SERVICES, []) if s not in phones]
     return vol.Schema(
         {
             vol.Required(
@@ -41,12 +57,45 @@ def _schema(defaults: dict[str, Any]) -> vol.Schema:
             vol.Optional(
                 CONF_COUNTIES, default=defaults.get(CONF_COUNTIES, [])
             ): cv.multi_select({c: c for c in sorted(ROMANIAN_COUNTIES)}),
+            # --- Notificări aplicație companion ---
+            vol.Optional(
+                CONF_NOTIFY_SERVICES, default=defaults.get(CONF_NOTIFY_SERVICES, [])
+            ): SelectSelector(
+                SelectSelectorConfig(
+                    options=phones + chosen,
+                    multiple=True,
+                    mode=SelectSelectorMode.LIST,
+                )
+            ),
+            vol.Required(
+                CONF_NOTIFY_MIN_LEVEL,
+                default=defaults.get(CONF_NOTIFY_MIN_LEVEL, "galben"),
+            ): SelectSelector(
+                SelectSelectorConfig(
+                    options=["galben", "portocaliu", "rosu"],
+                    translation_key="notify_min_level",
+                    mode=SelectSelectorMode.DROPDOWN,
+                )
+            ),
+            vol.Required(
+                CONF_NOTIFY_ANM, default=defaults.get(CONF_NOTIFY_ANM, True)
+            ): bool,
+            vol.Required(
+                CONF_NOTIFY_NOWCASTING, default=defaults.get(CONF_NOTIFY_NOWCASTING, True)
+            ): bool,
+            vol.Required(
+                CONF_NOTIFY_END, default=defaults.get(CONF_NOTIFY_END, True)
+            ): bool,
+            vol.Optional(
+                CONF_NOTIFY_URL,
+                description={"suggested_value": defaults.get(CONF_NOTIFY_URL, "")},
+            ): TextSelector(),
         }
     )
 
 
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    """Configurare inițială: județ ANM + județe nowcasting."""
+    """Configurare inițială: județ ANM + județe nowcasting + notificări."""
 
     VERSION = 1
 
@@ -59,7 +108,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             return self.async_create_entry(title=NAME, data=user_input)
 
-        return self.async_show_form(step_id="user", data_schema=_schema({}))
+        return self.async_show_form(step_id="user", data_schema=_schema(self.hass, {}))
 
     @staticmethod
     @callback
@@ -79,4 +128,6 @@ class OptionsFlow(config_entries.OptionsFlow):
             return self.async_create_entry(title="", data=user_input)
 
         current = {**self.config_entry.data, **self.config_entry.options}
-        return self.async_show_form(step_id="init", data_schema=_schema(current))
+        return self.async_show_form(
+            step_id="init", data_schema=_schema(self.hass, current)
+        )
