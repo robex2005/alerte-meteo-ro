@@ -12,6 +12,14 @@ const resolveJudet = (v) => {
   return null;
 };
 
+// județele adăugate în integrare (după senzorii de nowcasting / hartă care nu sunt indisponibili)
+const integCounties = (states) => {
+  const seen = {};
+  Object.keys(states).filter(k => /^sensor\.(alerta_nowcasting|culoare_harta)_/.test(k) && !['unavailable', 'unknown'].includes(states[k].state))
+    .forEach(k => { const j = resolveJudet(k.replace(/^sensor\.(alerta_nowcasting|culoare_harta)_/, '')); if (j) seen[j.cod] = j; });
+  return Object.values(seen).sort((a, b) => a.nume.localeCompare(b.nume, 'ro'));
+};
+
 const render = (states, cfg) => {
   const S = (id) => states[id] || {};
   const now = new Date();
@@ -20,7 +28,12 @@ const render = (states, cfg) => {
   // entitățile rămase „indisponibile” (de ex. după schimbarea județului în integrare) sunt ignorate
   const okKeys = (p) => keyBy(p).filter(k => !['unavailable', 'unknown'].includes((states[k] || {}).state));
   const autoJC = ((states[okKeys('sensor.culoare_harta_')[0]] || {}).attributes || {}).judet_cod || '';
-  const SEL = resolveJudet(cfg && cfg.judet) || resolveJudet(autoJC);   // județul ales în card, altfel cel din integrare
+  // județele afișate: cele bifate în card (`judete`), altfel toate cele din integrare
+  const INTEG = integCounties(states);
+  let SELS = [].concat((cfg && (cfg.judete || cfg.judet)) || []).map(resolveJudet).filter(Boolean);
+  if (!SELS.length) SELS = INTEG.length ? INTEG : [resolveJudet(autoJC)].filter(Boolean);
+  const multi = SELS.length > 1;
+  const SEL = SELS[0] || null;
   const JC = SEL ? SEL.cod : autoJC;
   const MO = {ianuarie:0,februarie:1,martie:2,aprilie:3,mai:4,iunie:5,iulie:6,august:7,septembrie:8,octombrie:9,noiembrie:10,decembrie:11};
   const mkD = (x) => { let d = new Date(now.getFullYear(), MO[String(x[2]).toLowerCase()], parseInt(x[1], 10), parseInt(x[3], 10), 0, 0); if (d - now > 200 * 864e5) d = new Date(d.getFullYear() - 1, d.getMonth(), d.getDate(), d.getHours()); return d; };
@@ -38,29 +51,31 @@ const render = (states, cfg) => {
   const CN = ['', 'galben', 'portocaliu', 'roșu'], CC = ['', '#f1c40f', '#e67e22', '#e74c3c'], TX = ['', '#000', '#000', '#fff'];
   
   // --- Date: avertizări ANM pentru județul ales + nowcasting ---
-  const mapSt = String((states['sensor.culoare_harta_' + (SEL ? SEL.slug : '')] || {}).state || '').toLowerCase();
-  const mapC = /ro[sș]u/.test(mapSt) ? 3 : /portocal/.test(mapSt) ? 2 : /galben/.test(mapSt) ? 1 : 0;
-  let ncC = 0, ncEnd = '', ncF = '';
-  const wx = (((S('sensor.avertizari_meteo_anm').attributes || {}).avertizari) || [])
-    .filter(w => w && typeof w === 'object' && JC && w.judet === JC)
-    .map(w => { const p = parseIv(w.intervalul); if (!p) return null; let c = parseInt(w.culoare, 10) || 0;
+  const colOf = (x) => /ro[sș]u/.test(x) ? 3 : /portocal/.test(x) ? 2 : /galben/.test(x) ? 1 : 0;
+  const allW = ((S('sensor.avertizari_meteo_anm').attributes || {}).avertizari) || [];
+  const wx = [], ncs = [];
+  SELS.forEach(J => {
+    const mapC = colOf(String((states['sensor.culoare_harta_' + J.slug] || {}).state || '').toLowerCase());
+    allW.filter(w => w && typeof w === 'object' && w.judet === J.cod).forEach(w => {
+      const p = parseIv(w.intervalul); if (!p) return;
+      let c = parseInt(w.culoare, 10) || 0;
       // ANM trimite uneori `culoare: 0` pentru intervalul activ; atunci folosim culoarea județului de pe hartă
       if (!c && p[0] <= now && now < p[1]) c = mapC;
-      return { c, s: p[0], e: p[1], f: w.fenomene_vizate || '' }; })
-    .filter(Boolean);
-  const nks = keyBy('sensor.alerta_nowcasting_');
-  const nk = (SEL && nks.find(k => k === 'sensor.alerta_nowcasting_' + SEL.slug)) || nks.find(k => (parseInt(((states[k] || {}).attributes || {})['Alerte active'], 10) || 0) > 0) || nks[0];
-  const na = (states[nk] || {}).attributes || {};
-  if ((parseInt(na['Alerte active'], 10) || 0) > 0) {
-    const cc0 = String(na['Culoare'] || '').toLowerCase();
-    ncC = /ro[sș]u/.test(cc0) ? 3 : /portocal/.test(cc0) ? 2 : /galben/.test(cc0) ? 1 : 0;
-    ncEnd = String(na['Sfârșit'] || ''); ncF = String(na['semnalare'] || '');
-  }
+      wx.push({ c, s: p[0], e: p[1], f: w.fenomene_vizate || '', j: J.nume });
+    });
+    const na = (states['sensor.alerta_nowcasting_' + J.slug] || {}).attributes || {};
+    if ((parseInt(na['Alerte active'], 10) || 0) > 0) {
+      const c = colOf(String(na['Culoare'] || '').toLowerCase());
+      if (c) ncs.push({ c, end: String(na['Sfârșit'] || ''), f: String(na['semnalare'] || ''), j: J.nume });
+    }
+  });
+  ncs.sort((x, y) => y.c - x.c);
+  const ncC = ncs.length ? ncs[0].c : 0;
   const act = wx.filter(w => w.c >= 1 && w.s <= now && now < w.e).sort((p, q) => q.c - p.c || q.e - p.e);
   const nxt = wx.filter(w => w.c >= 1 && w.s > now && w.s - now < 48 * 36e5).sort((p, q) => p.s - q.s);
   
   // --- Mesajele ANM complete (folosite și pentru salt din rezumat) ---
-  const me = states[(SEL && states['sensor.mesaj_meteo_' + SEL.slug]) ? 'sensor.mesaj_meteo_' + SEL.slug : okKeys('sensor.mesaj_meteo_')[0]] || {}, txt = (me.attributes || {}).mesaj_complet || '';
+  const me = states[SELS.map(J => 'sensor.mesaj_meteo_' + J.slug).find(id => states[id] && !['unavailable', 'unknown'].includes(states[id].state)) || okKeys('sensor.mesaj_meteo_')[0]] || {}, txt = (me.attributes || {}).mesaj_complet || '';
   const ids = String(S('sensor.anm_avertizare_id').state || '').split(',').map(x => x.trim()).filter(x => x && x !== '0' && !['unavailable', 'unknown', 'none'].includes(x)).reverse();
   const txtS = String(txt);
   const heads = [...txtS.matchAll(/MESAJ\s+(\d+)\s*\/\s*(\d+)/gi)].map(m => `${m[1]}/${m[2]}`);
@@ -76,18 +91,19 @@ const render = (states, cfg) => {
   const blk = (c, ic, head, sub, w) => { const go = !!(w && hasMsg(w)); return `<div ${go ? `data-s="${w.s.getTime()}" data-e="${w.e.getTime()}" data-c="${w.c}" onclick="${GO}" onpointerup="if(event.pointerType==='touch')${GO}" title="Mergi la mesajul complet ANM"` : ''} style="display:flex;gap:10px;align-items:flex-start;padding:8px 10px;margin:6px 0;border-left:4px solid ${CC[c]};background:color-mix(in srgb,${CC[c]} 13%,transparent);border-radius:0 8px 8px 0${go ? ';cursor:pointer' : ''}">
     <span style="font-size:22px;line-height:1.2;flex:none">${ic}</span>
     <div style="min-width:0;flex:1"><div style="display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px">${head}</div><div style="font-size:14px;margin-top:3px;overflow-wrap:anywhere">${sub}</div></div>${go ? '<ha-icon icon="mdi:arrow-down" style="--mdc-icon-size:18px;opacity:.5;flex:none;align-self:center"></ha-icon>' : ''}</div>`; };
+  const JL = (j) => multi && j ? `<span style="font-size:13px;font-weight:700">📍 ${j}</span>` : '';
   const T = (t, w) => `<span style="font-size:14px;font-weight:${w || 600}">${t}</span>`;
   
   // --- Corp: ACUM / URMEAZĂ ---
   let h = '';
   if (act.length || ncC >= 1) {
     h += H3('Acum');
-    if (ncC >= 1) h += blk(ncC, '⚡', pill(ncC) + T(ncEnd ? `nowcasting · până ${ncEnd}` : 'nowcasting · acum'), cap(ncF) || 'Fenomen violent iminent');
-    h += act.map(w => blk(w.c, emo(w.f), pill(w.c) + T(`până ${dl(w.e) === 'azi' ? '' : dl(w.e) + ' '}${hm(w.e)}`) + `<span style="font-size:13px;opacity:.75">încă ${rem(w.e - now)}</span>`, cap(w.f), w)).join('');
+    h += ncs.map(n => blk(n.c, '⚡', pill(n.c) + JL(n.j) + T(n.end ? `nowcasting · până ${n.end}` : 'nowcasting · acum'), cap(n.f) || 'Fenomen violent iminent')).join('');
+    h += act.map(w => blk(w.c, emo(w.f), pill(w.c) + JL(w.j) + T(`până ${dl(w.e) === 'azi' ? '' : dl(w.e) + ' '}${hm(w.e)}`) + `<span style="font-size:13px;opacity:.75">încă ${rem(w.e - now)}</span>`, cap(w.f), w)).join('');
   }
   if (nxt.length) {
     h += H3('Urmează');
-    h += nxt.map(w => blk(w.c, emo(w.f), pill(w.c) + T(`${dl(w.s)} ${hm(w.s)} → ${dl(w.e) === dl(w.s) ? '' : dl(w.e) + ' '}${hm(w.e)}`) + `<span style="font-size:13px;opacity:.75">în ${rem(w.s - now)}</span>`, cap(w.f), w)).join('');
+    h += nxt.map(w => blk(w.c, emo(w.f), pill(w.c) + JL(w.j) + T(`${dl(w.s)} ${hm(w.s)} → ${dl(w.e) === dl(w.s) ? '' : dl(w.e) + ' '}${hm(w.e)}`) + `<span style="font-size:13px;opacity:.75">în ${rem(w.s - now)}</span>`, cap(w.f), w)).join('');
   }
   if (!act.length && ncC < 1 && !nxt.length) h += `<div style="font-size:14px;padding:6px 2px">✅ Nicio avertizare activă sau în următoarele 48h.</div>`;
   
@@ -168,25 +184,30 @@ class AlerteMeteoCard extends HTMLElement {
 
 class AlerteMeteoCardEditor extends HTMLElement {
   setConfig(config) { this._config = config || {}; this._render(); }
-  set hass(hass) { this._hass = hass; if (this._form) this._form.hass = hass; }
+  set hass(hass) { this._hass = hass; this._render(); }
   _render() {
+    if (!this._hass) return;
+    const list = integCounties(this._hass.states);
+    const key = list.map(j => j.cod).join(',');
     if (!this._form) {
       this._form = document.createElement('ha-form');
-      this._form.computeLabel = (s) => s.label || s.name;
+      this._form.computeLabel = (sc) => sc.label || sc.name;
       this._form.addEventListener('value-changed', (e) => {
-        const v = (e.detail.value || {}).judet;
-        const cfg = Object.assign({}, this._config);
-        if (v) cfg.judet = v; else delete cfg.judet;
+        const v = e.detail.value || {};
+        const all = integCounties(this._hass.states);
+        const checked = all.filter(j => v[j.cod]).map(j => j.cod);
+        const cfg = Object.assign({}, this._config); delete cfg.judet;
+        if (checked.length && checked.length < all.length) cfg.judete = checked; else delete cfg.judete;
         this._config = cfg;
         this.dispatchEvent(new CustomEvent('config-changed', { detail: { config: cfg }, bubbles: true, composed: true }));
       });
       this.appendChild(this._form);
     }
-    const opts = [{ value: '', label: 'Automat (județul din integrare)' }].concat(
-      Object.entries(JUDETE).sort((a, b) => a[1].localeCompare(b[1], 'ro')).map(([cod, nume]) => ({ value: cod, label: nume })));
-    this._form.schema = [{ name: 'judet', label: 'Județ', selector: { select: { options: opts, mode: 'dropdown' } } }];
-    this._form.data = { judet: (resolveJudet(this._config.judet) || {}).cod || '' };
-    if (this._hass) this._form.hass = this._hass;
+    const sel = [].concat(this._config.judete || this._config.judet || []).map(resolveJudet).filter(Boolean).map(j => j.cod);
+    this._form.hass = this._hass;
+    this._form.schema = list.map(j => ({ name: j.cod, label: j.nume, selector: { boolean: {} } }));
+    const data = {}; list.forEach(j => { data[j.cod] = sel.length ? sel.includes(j.cod) : true; });
+    this._form.data = data;
   }
 }
 if (!customElements.get('alerte-meteo-card-editor')) customElements.define('alerte-meteo-card-editor', AlerteMeteoCardEditor);

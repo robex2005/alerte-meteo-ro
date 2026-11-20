@@ -1,5 +1,10 @@
 # Istoric versiuni
 
+## 1.3
+- Editor card: casete cu bifă doar pentru județele adăugate în integrare (nu o listă cu toate).
+- Cardul afișează avertizările ANM și nowcasting pentru toate județele bifate; cu mai multe județe, fiecare bloc are eticheta județului.
+- Configurare YAML: `judete: [MS, AB]` (nume sau cod); implicit, toate județele din integrare.
+
 ## 1.2
 - Iconiță integrare: harta României (tricolor).
 - Cardul `custom:alerte-meteo-card`: județ ales după nume sau cod, cu editor vizual (listă de județe).
