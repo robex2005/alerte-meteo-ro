@@ -5,10 +5,10 @@
         "title": "Romania Weather Alerts",
         "description": "ANM warnings for a county plus nowcasting alerts.",
         "data": {
-          "judet_cod": "County (ANM warnings)",
+          "judet_cod": "ANM warnings county (one county only)",
           "update_interval": "ANM update interval (minutes)",
           "nowcasting": "Enable nowcasting alerts",
-          "counties": "Nowcasting counties (empty = the county chosen above)"
+          "counties": "Nowcasting counties (several allowed; empty = the ANM county)"
         }
       }
     },
@@ -21,10 +21,10 @@
       "init": {
         "title": "Romania Weather Alerts settings",
         "data": {
-          "judet_cod": "County (ANM warnings)",
+          "judet_cod": "ANM warnings county (one county only)",
           "update_interval": "ANM update interval (minutes)",
           "nowcasting": "Enable nowcasting alerts",
-          "counties": "Nowcasting counties (empty = the county chosen above)"
+          "counties": "Nowcasting counties (several allowed; empty = the ANM county)"
         }
       }
     }

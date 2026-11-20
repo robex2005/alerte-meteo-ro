@@ -12,11 +12,11 @@ const resolveJudet = (v) => {
   return null;
 };
 
-// județele adăugate în integrare (după senzorii de nowcasting / hartă care nu sunt indisponibili)
+// județele pentru nowcasting adăugate în integrare (senzori care nu sunt indisponibili)
 const integCounties = (states) => {
   const seen = {};
-  Object.keys(states).filter(k => /^sensor\.(alerta_nowcasting|culoare_harta)_/.test(k) && !['unavailable', 'unknown'].includes(states[k].state))
-    .forEach(k => { const j = resolveJudet(k.replace(/^sensor\.(alerta_nowcasting|culoare_harta)_/, '')); if (j) seen[j.cod] = j; });
+  Object.keys(states).filter(k => /^sensor\.alerta_nowcasting_/.test(k) && !['unavailable', 'unknown'].includes(states[k].state))
+    .forEach(k => { const j = resolveJudet(k.replace(/^sensor\.alerta_nowcasting_/, '')); if (j) seen[j.cod] = j; });
   return Object.values(seen).sort((a, b) => a.nume.localeCompare(b.nume, 'ro'));
 };
 
@@ -28,12 +28,13 @@ const render = (states, cfg) => {
   // entitățile rămase „indisponibile” (de ex. după schimbarea județului în integrare) sunt ignorate
   const okKeys = (p) => keyBy(p).filter(k => !['unavailable', 'unknown'].includes((states[k] || {}).state));
   const autoJC = ((states[okKeys('sensor.culoare_harta_')[0]] || {}).attributes || {}).judet_cod || '';
-  // județele afișate: cele bifate în card (`judete`), altfel toate cele din integrare
+  // avertizări ANM: un singur județ (cel ales în integrare); nowcasting: județele bifate în card
+  const ANMJ = resolveJudet(autoJC);
   const INTEG = integCounties(states);
   let SELS = [].concat((cfg && (cfg.judete || cfg.judet)) || []).map(resolveJudet).filter(Boolean);
-  if (!SELS.length) SELS = INTEG.length ? INTEG : [resolveJudet(autoJC)].filter(Boolean);
+  if (!SELS.length) SELS = INTEG;
   const multi = SELS.length > 1;
-  const SEL = SELS[0] || null;
+  const SEL = ANMJ || SELS[0] || null;
   const JC = SEL ? SEL.cod : autoJC;
   const MO = {ianuarie:0,februarie:1,martie:2,aprilie:3,mai:4,iunie:5,iulie:6,august:7,septembrie:8,octombrie:9,noiembrie:10,decembrie:11};
   const mkD = (x) => { let d = new Date(now.getFullYear(), MO[String(x[2]).toLowerCase()], parseInt(x[1], 10), parseInt(x[3], 10), 0, 0); if (d - now > 200 * 864e5) d = new Date(d.getFullYear() - 1, d.getMonth(), d.getDate(), d.getHours()); return d; };
@@ -54,15 +55,17 @@ const render = (states, cfg) => {
   const colOf = (x) => /ro[sș]u/.test(x) ? 3 : /portocal/.test(x) ? 2 : /galben/.test(x) ? 1 : 0;
   const allW = ((S('sensor.avertizari_meteo_anm').attributes || {}).avertizari) || [];
   const wx = [], ncs = [];
-  SELS.forEach(J => {
-    const mapC = colOf(String((states['sensor.culoare_harta_' + J.slug] || {}).state || '').toLowerCase());
-    allW.filter(w => w && typeof w === 'object' && w.judet === J.cod).forEach(w => {
+  if (ANMJ) {
+    const mapC = colOf(String((states['sensor.culoare_harta_' + ANMJ.slug] || {}).state || '').toLowerCase());
+    allW.filter(w => w && typeof w === 'object' && w.judet === ANMJ.cod).forEach(w => {
       const p = parseIv(w.intervalul); if (!p) return;
       let c = parseInt(w.culoare, 10) || 0;
       // ANM trimite uneori `culoare: 0` pentru intervalul activ; atunci folosim culoarea județului de pe hartă
       if (!c && p[0] <= now && now < p[1]) c = mapC;
-      wx.push({ c, s: p[0], e: p[1], f: w.fenomene_vizate || '', j: J.nume });
+      wx.push({ c, s: p[0], e: p[1], f: w.fenomene_vizate || '', j: ANMJ.nume });
     });
+  }
+  SELS.forEach(J => {
     const na = (states['sensor.alerta_nowcasting_' + J.slug] || {}).attributes || {};
     if ((parseInt(na['Alerte active'], 10) || 0) > 0) {
       const c = colOf(String(na['Culoare'] || '').toLowerCase());
@@ -75,7 +78,7 @@ const render = (states, cfg) => {
   const nxt = wx.filter(w => w.c >= 1 && w.s > now && w.s - now < 48 * 36e5).sort((p, q) => p.s - q.s);
   
   // --- Mesajele ANM complete (folosite și pentru salt din rezumat) ---
-  const me = states[SELS.map(J => 'sensor.mesaj_meteo_' + J.slug).find(id => states[id] && !['unavailable', 'unknown'].includes(states[id].state)) || okKeys('sensor.mesaj_meteo_')[0]] || {}, txt = (me.attributes || {}).mesaj_complet || '';
+  const me = states[[SEL].filter(Boolean).map(J => 'sensor.mesaj_meteo_' + J.slug).find(id => states[id] && !['unavailable', 'unknown'].includes(states[id].state)) || okKeys('sensor.mesaj_meteo_')[0]] || {}, txt = (me.attributes || {}).mesaj_complet || '';
   const ids = String(S('sensor.anm_avertizare_id').state || '').split(',').map(x => x.trim()).filter(x => x && x !== '0' && !['unavailable', 'unknown', 'none'].includes(x)).reverse();
   const txtS = String(txt);
   const heads = [...txtS.matchAll(/MESAJ\s+(\d+)\s*\/\s*(\d+)/gi)].map(m => `${m[1]}/${m[2]}`);
@@ -99,11 +102,11 @@ const render = (states, cfg) => {
   if (act.length || ncC >= 1) {
     h += H3('Acum');
     h += ncs.map(n => blk(n.c, '⚡', pill(n.c) + JL(n.j) + T(n.end ? `nowcasting · până ${n.end}` : 'nowcasting · acum'), cap(n.f) || 'Fenomen violent iminent')).join('');
-    h += act.map(w => blk(w.c, emo(w.f), pill(w.c) + JL(w.j) + T(`până ${dl(w.e) === 'azi' ? '' : dl(w.e) + ' '}${hm(w.e)}`) + `<span style="font-size:13px;opacity:.75">încă ${rem(w.e - now)}</span>`, cap(w.f), w)).join('');
+    h += act.map(w => blk(w.c, emo(w.f), pill(w.c) + T(`până ${dl(w.e) === 'azi' ? '' : dl(w.e) + ' '}${hm(w.e)}`) + `<span style="font-size:13px;opacity:.75">încă ${rem(w.e - now)}</span>`, cap(w.f), w)).join('');
   }
   if (nxt.length) {
     h += H3('Urmează');
-    h += nxt.map(w => blk(w.c, emo(w.f), pill(w.c) + JL(w.j) + T(`${dl(w.s)} ${hm(w.s)} → ${dl(w.e) === dl(w.s) ? '' : dl(w.e) + ' '}${hm(w.e)}`) + `<span style="font-size:13px;opacity:.75">în ${rem(w.s - now)}</span>`, cap(w.f), w)).join('');
+    h += nxt.map(w => blk(w.c, emo(w.f), pill(w.c) + T(`${dl(w.s)} ${hm(w.s)} → ${dl(w.e) === dl(w.s) ? '' : dl(w.e) + ' '}${hm(w.e)}`) + `<span style="font-size:13px;opacity:.75">în ${rem(w.s - now)}</span>`, cap(w.f), w)).join('');
   }
   if (!act.length && ncC < 1 && !nxt.length) h += `<div style="font-size:14px;padding:6px 2px">✅ Nicio avertizare activă sau în următoarele 48h.</div>`;
   

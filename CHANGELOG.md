@@ -1,5 +1,10 @@
 # Istoric versiuni
 
+## 1.4
+- Avertizările ANM: un singur județ (cel ales în integrare); nowcasting: mai multe județe.
+- Card: casetele din editor se aplică doar nowcasting-ului; ANM rămâne pe județul integrării.
+- Formularul integrării: etichete clare (ANM = un județ, nowcasting = mai multe).
+
 ## 1.3
 - Editor card: casete cu bifă doar pentru județele adăugate în integrare (nu o listă cu toate).
 - Cardul afișează avertizările ANM și nowcasting pentru toate județele bifate; cu mai multe județe, fiecare bloc are eticheta județului.

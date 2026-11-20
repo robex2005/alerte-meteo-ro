@@ -35,10 +35,10 @@ La configurare alegi:
 
 | Câmp | Descriere |
 |------|-----------|
-| Județ (avertizări ANM) | județul pentru care se afișează mesajul ANM |
+| Județ (avertizări ANM) | **un singur județ**, pentru mesajul ANM |
 | Interval actualizare ANM | în minute (implicit 10) |
 | Activează alertele nowcasting | pornește senzorii nowcasting |
-| Județe nowcasting | unul sau mai multe județe; gol = județul ales pentru ANM |
+| Județe nowcasting | **unul sau mai multe** județe; gol = județul ales pentru ANM |
 
 Setările se pot schimba ulterior din **Configurare** pe integrare.
 
@@ -71,7 +71,7 @@ Cardul își ia județul din integrare (cel ales la configurare) și își găse
 type: custom:alerte-meteo-card
 ```
 
-Cardul arată implicit toate județele adăugate în integrare. În editorul vizual bifezi doar cele pe care vrei să le vezi; în YAML: `judete: [Mureș, Alba]` (nume sau cod, cu sau fără diacritice). Cu mai multe județe, fiecare avertizare are eticheta județului. Dacă nu apare în lista de carduri, reîncarcă pagina cu cache-ul șters.
+Avertizările ANM se afișează pentru un singur județ (cel ales în integrare), iar nowcasting pentru mai multe. În editorul vizual bifezi județele de nowcasting pe care vrei să le vezi; în YAML: `judete: [Mureș, Alba]` (nume sau cod, cu sau fără diacritice). Cu mai multe județe, fiecare alertă nowcasting are eticheta județului. Dacă nu apare în lista de carduri, reîncarcă pagina cu cache-ul șters.
 
 ## Carduri Lovelace din exemple (YAML)
 
