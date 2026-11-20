@@ -1,6 +1,6 @@
 # Istoric versiuni
 
-## 1.11
+## 2.0
 - Notificări și pe WhatsApp, Telegram sau orice serviciu de notificare text, pe lângă aplicația Home Assistant.
 - Mesaje mai ușor de citit: bulină cu culoarea codului, intervalul pe rânduri separate, fenomenele ca listă.
 - Alertele nowcasting au același format.
