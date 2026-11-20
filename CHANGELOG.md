@@ -1,5 +1,9 @@
 # Istoric versiuni
 
+## 1.9
+- README rescris, succint.
+- Validări automate (HACS, hassfest, sintaxă card) pentru adăugarea în HACS.
+
 ## 1.8
 - Card: textul fenomenului din mesajele ANM se decodează (entități HTML) și pictograma potrivită (💨 etc.) apare corect.
 

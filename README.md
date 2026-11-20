@@ -1,104 +1,70 @@
 # Alerte Meteo România
 
-Integrare Home Assistant care reunește, într-o singură integrare, două surse oficiale ANM (Meteo România):
+[![HACS](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://hacs.xyz)
+[![Validate](https://github.com/robex2005/alerte-meteo-ro/actions/workflows/validate.yml/badge.svg)](https://github.com/robex2005/alerte-meteo-ro/actions/workflows/validate.yml)
+[![Release](https://img.shields.io/github/v/release/robex2005/alerte-meteo-ro)](https://github.com/robex2005/alerte-meteo-ro/releases)
 
-- **Avertizări meteo ANM** pe județ: mesajul complet, codul (galben / portocaliu / roșu), harta activă și culoarea județului pe hartă.
-- **Alerte nowcasting** (următoarele ore), câte un senzor pentru fiecare județ ales.
+Integrare Home Assistant pentru **avertizările meteo ANM** (pe județ) și **alertele nowcasting**, cu un card Lovelace propriu, care apare în lista de carduri, fără YAML.
 
-Provine din unificarea integrărilor [`alerta-anm-judet-romania`](https://github.com/dancucu/alerta-anm-judet-romania) (GPL-3.0) și [`alerta-nowcasting`](https://github.com/dancucu/alerta-nowcasting) (MIT), de `dancucu`.
+<p align="center">
+  <img src="docs/images/card-activ-acum-urmeaza.png" width="260" alt="Avertizare activă">
+  <img src="docs/images/card-fara-avertizare.png" width="260" alt="Fără avertizare">
+</p>
 
-## Cerințe (de instalat înainte)
+## Ce face
 
-| Ce | Pentru ce | Link |
-|----|-----------|------|
-| Home Assistant **2024.12** sau mai nou | integrarea (formularul de opțiuni folosește `config_entry` din Home Assistant) | — |
-| *(opțional)* **button-card** (`custom:button-card`) | doar pentru varianta YAML [`examples/lovelace_card_alerte_meteo.yaml`](examples/lovelace_card_alerte_meteo.yaml); cardul din integrare nu are nevoie de el | https://github.com/custom-cards/button-card |
-| acces la internet | datele vin de la ANM (`meteoromania.ro`); hărțile sunt afișate prin `images.weserv.nl` | — |
-
-Cardul din integrare (`Alerte Meteo România`) nu cere nimic în plus. **button-card** e necesar numai dacă folosești varianta YAML. Cardul Markdown simplu din [`examples/lovelace_card_markdown.yaml`](examples/lovelace_card_markdown.yaml) nu are nevoie de nimic în plus. Alte integrări nu sunt necesare; biblioteca `requests` se instalează automat.
-
-> Dacă ai deja `alerta_anm_judet_romania` sau `alerta_nowcasting`, șterge-le înainte să adaugi această integrare: aceleași entități ar fi create de două ori (cu sufix `_2`).
+- **Avertizări ANM** pentru un singur județ: cod galben / portocaliu / roșu, *acum* și *urmează* (următoarele 48h), mesajele ANM complete cu harta.
+- **Avertizări parțiale** (zone de munte, altitudine, litoral), citite din harta ANM: „📍 local · zone de munte".
+- **Nowcasting** pentru unul sau mai multe județe.
+- **Card** `custom:alerte-meteo-card`: antet colorat și deschis când e avertizare, „Nicio avertizare meteo" și închis când nu e; atingi un bloc din rezumat și sare la mesajul complet.
 
 ## Instalare
 
-1. Adaugă acest repository ca *custom repository* în Marketplace/HACS, cu categoria **Integration**, folosind linkul complet:
-
-   ```
-   https://github.com/robex2005/alerte-meteo-ro
-   ```
-
-   (Marketplace/HACS → meniul ⋮ → *Custom repositories* → lipești linkul → alegi *Integration* → *Add*.)
+1. HACS → ⋮ → **Custom repositories** → `https://github.com/robex2005/alerte-meteo-ro` → categoria **Integration** → *Add*.
 2. Instalează **Alerte Meteo România** și repornește Home Assistant.
-3. **Setări → Dispozitive și servicii → Adaugă integrare → Alerte Meteo România**.
+3. **Setări → Dispozitive și servicii → Adaugă integrare → Alerte Meteo România.**
 
-La configurare alegi:
+Cerințe: Home Assistant **2024.12** sau mai nou, acces la internet (date de la `meteoromania.ro`). Dacă ai integrările vechi `alerta_anm_judet_romania` / `alerta_nowcasting`, șterge-le întâi (entitățile s-ar dubla).
+
+## Configurare
 
 | Câmp | Descriere |
 |------|-----------|
-| Județ (avertizări ANM) | **un singur județ**, pentru mesajul ANM |
-| Interval actualizare ANM | în minute (implicit 10) |
-| Activează alertele nowcasting | pornește senzorii nowcasting |
-| Județe nowcasting | **unul sau mai multe** județe; gol = județul ales pentru ANM |
+| Județ avertizări ANM | **un singur județ** |
+| Interval actualizare | minute (implicit 10) |
+| Nowcasting | pornește senzorii nowcasting |
+| Județe nowcasting | **unul sau mai multe**; gol = județul ANM |
 
-Setările se pot schimba ulterior din **Configurare** pe integrare.
+Se pot schimba oricând din **Configurare** pe integrare.
+
+## Card
+
+Dashboard → **Editează** → **Adaugă card** → **Alerte Meteo România** (sau în YAML: `type: custom:alerte-meteo-card`). Se încarcă singur odată cu integrarea.
+
+În editor bifezi județele de nowcasting afișate; în YAML: `judete: [Mureș, Alba]` (nume sau cod, cu/fără diacritice). Avertizările ANM rămân pe județul integrării.
+
+Varianta cu `button-card` și una Markdown simplă sunt în [`examples/`](examples/).
 
 ## Entități
 
-Pentru județul ales (exemplu: Mureș):
+Pentru județul ales (ex. Mureș):
 
 | Entitate | Descriere |
 |----------|-----------|
-| `sensor.avertizari_meteo_anm` | toate avertizările ANM (atributul `avertizari`) |
+| `sensor.avertizari_meteo_anm` | toate avertizările ANM (atribut `avertizari`) |
 | `sensor.anm_avertizare_id` | ID-urile avertizărilor active |
 | `sensor.mesaj_meteo_mures` | `alerta` / `liniste`; atribute `tip_cod`, `mesaj_complet` |
 | `sensor.harta_meteo_activa` | URL-ul hărții active |
-| `sensor.culoare_harta_mures` | culoarea județului pe hartă; atribute `date_harti`, `zone_partiale` (munte / altitudine / litoral colorate pe hartă) și `culoare_zona` |
-| `sensor.alerta_nowcasting_mures` | `alerta` / `liniste`; atribute `Alerte active`, `Culoare`, `Început`, `Sfârșit`, `semnalare`, `Zone`, `Fenomene`, `Titlu`, `Ultima actualizare` |
+| `sensor.culoare_harta_mures` | culoarea județului; atribute `date_harti`, `zone_partiale`, `culoare_zona` |
+| `sensor.alerta_nowcasting_mures` | `alerta` / `liniste`; atribute `Alerte active`, `Culoare`, `Început`, `Sfârșit`, `semnalare`, `Zone`, `Fenomene` |
 
-Atributele nowcasting sunt în limba română, cu diacritice; într-un template folosește ghilimele, de exemplu
-`state_attr('sensor.alerta_nowcasting_mures', 'Alerte active') | int(0)`.
+Atributele nowcasting sunt în română, cu diacritice: `state_attr('sensor.alerta_nowcasting_mures', 'Alerte active') | int(0)`.
 
-## Card în dashboard (fără YAML, fără județ scris de mână)
+## Limite
 
-Integrarea își încarcă singură cardul Lovelace. După instalare și repornire:
+- Avertizările parțiale se detectează doar cât timp sunt active; pentru cele viitoare ANM nu dă date pe zone.
+- Hărțile sunt afișate prin `images.weserv.nl`.
 
-1. Deschide dashboardul → **Editează** → **Adaugă card**.
-2. Caută **Alerte Meteo România** și adaugă-l. Atât.
+## Istoric și licență
 
-Cardul își ia județul din integrare (cel ales la configurare) și își găsește singur entitățile; nu trebuie să scrii niciun județ sau nume de entitate. YAML-ul echivalent este doar:
-
-```yaml
-type: custom:alerte-meteo-card
-```
-
-Avertizările ANM se afișează pentru un singur județ (cel ales în integrare), iar nowcasting pentru mai multe. În editorul vizual bifezi județele de nowcasting pe care vrei să le vezi; în YAML: `judete: [Mureș, Alba]` (nume sau cod, cu sau fără diacritice). Cu mai multe județe, fiecare alertă nowcasting are eticheta județului. Dacă nu apare în lista de carduri, reîncarcă pagina cu cache-ul șters.
-
-## Carduri Lovelace din exemple (YAML)
-
-Cardurile din [`examples/`](examples/) nu conțin niciun județ scris de mână: își găsesc singure entitățile integrării și iau numele județului din atributul `judet` al lui `sensor.mesaj_meteo_<județ>`. Funcționează pentru orice județ ales la configurare; copiezi YAML-ul în dashboard, fără editări.
-
-| Fișier | Conținut | Necesită |
-|--------|----------|----------|
-| [`lovelace_card_alerte_meteo.yaml`](examples/lovelace_card_alerte_meteo.yaml) | **cardul principal**: ANM + nowcasting într-un singur card pliabil; *acum* / *urmează* (≤48h), mesajele ANM complete cu hartă | `button-card` |
-| [`lovelace_card_markdown.yaml`](examples/lovelace_card_markdown.yaml) | variantă simplă, doar text | cardul Markdown standard |
-
-### Cum arată cardul (telefon)
-
-| Avertizare activă acum + următoarele | Nowcasting activ | Nicio avertizare |
-|:---:|:---:|:---:|
-| ![Avertizare activă acum și următoarele](docs/images/card-activ-acum-urmeaza.png) | ![Nowcasting activ](docs/images/card-activ-nowcasting.png) | ![Nicio avertizare](docs/images/card-fara-avertizare.png) |
-
-Mesajele complete ANM, cu harta fiecărui mesaj, apar sub secțiunile *Acum* / *Urmează*:
-
-<p align="center"><img src="docs/images/card-detalii-anm.png" alt="Mesaje ANM cu hartă" width="320"></p>
-
-Antetul cardului principal se schimbă singur:
-
-- **fără avertizare**: antet neutru „NICIO AVERTIZARE METEO”, card colapsat;
-- **cu avertizare** (activă acum, nowcasting sau în următoarele 48h): antet colorat după cea mai gravă avertizare (galben / portocaliu / roșu), „AVERTIZARE METEO ACTIVĂ” și card expandat.
-
-Dacă îl pliezi sau îl expandezi manual, alegerea se păstrează până când starea (avertizare / fără avertizare) se schimbă.
-
-## Licență
-
-GPL-3.0 (vezi `LICENSE`). Partea de nowcasting provine din `alerta-nowcasting`, publicat sub licența MIT, Copyright (c) 2026 Dan.
+Versiuni în [CHANGELOG.md](CHANGELOG.md). Licență **GPL-3.0**; provine din unificarea [`alerta-anm-judet-romania`](https://github.com/dancucu/alerta-anm-judet-romania) (GPL-3.0) și [`alerta-nowcasting`](https://github.com/dancucu/alerta-nowcasting) (MIT) de `dancucu`. Date: Administrația Națională de Meteorologie.
