@@ -9,7 +9,7 @@
 # - Starea deschis/închis aleasă manual se păstrează cât timp starea (avertizare / fără)
 #   nu se schimbă; la schimbare, cardul revine la comportamentul de mai sus.
 #
-# Necesită doar custom:button-card.
+# Necesită doar custom:button-card. Varianta fără button-card: `type: custom:alerte-meteo-card` (încărcat de integrare).
 
 type: custom:button-card
 triggers_update: all

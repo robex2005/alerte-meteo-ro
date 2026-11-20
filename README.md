@@ -12,10 +12,10 @@ Provine din unificarea integrărilor [`alerta-anm-judet-romania`](https://github
 | Ce | Pentru ce | Link |
 |----|-----------|------|
 | Home Assistant **2024.12** sau mai nou | integrarea (formularul de opțiuni folosește `config_entry` din Home Assistant) | — |
-| **button-card** (`custom:button-card`), card de dashboard | cardul principal din [`examples/lovelace_card_alerte_meteo.yaml`](examples/lovelace_card_alerte_meteo.yaml) | https://github.com/custom-cards/button-card |
+| *(opțional)* **button-card** (`custom:button-card`) | doar pentru varianta YAML [`examples/lovelace_card_alerte_meteo.yaml`](examples/lovelace_card_alerte_meteo.yaml); cardul din integrare nu are nevoie de el | https://github.com/custom-cards/button-card |
 | acces la internet | datele vin de la ANM (`meteoromania.ro`); hărțile sunt afișate prin `images.weserv.nl` | — |
 
-Instalează **button-card** din Marketplace/HACS (categoria *Dashboard*/*Plugin*) înainte de a adăuga cardul. Cardul Markdown simplu din [`examples/lovelace_card_markdown.yaml`](examples/lovelace_card_markdown.yaml) nu are nevoie de nimic în plus. Alte integrări nu sunt necesare; biblioteca `requests` se instalează automat.
+Cardul din integrare (`Alerte Meteo România`) nu cere nimic în plus. **button-card** e necesar numai dacă folosești varianta YAML. Cardul Markdown simplu din [`examples/lovelace_card_markdown.yaml`](examples/lovelace_card_markdown.yaml) nu are nevoie de nimic în plus. Alte integrări nu sunt necesare; biblioteca `requests` se instalează automat.
 
 > Dacă ai deja `alerta_anm_judet_romania` sau `alerta_nowcasting`, șterge-le înainte să adaugi această integrare: aceleași entități ar fi create de două ori (cu sufix `_2`).
 
@@ -58,7 +58,22 @@ Pentru județul ales (exemplu: Mureș):
 Atributele nowcasting sunt în limba română, cu diacritice; într-un template folosește ghilimele, de exemplu
 `state_attr('sensor.alerta_nowcasting_mures', 'Alerte active') | int(0)`.
 
-## Carduri Lovelace (universale)
+## Card în dashboard (fără YAML, fără județ scris de mână)
+
+Integrarea își încarcă singură cardul Lovelace. După instalare și repornire:
+
+1. Deschide dashboardul → **Editează** → **Adaugă card**.
+2. Caută **Alerte Meteo România** și adaugă-l. Atât.
+
+Cardul își ia județul din integrare (cel ales la configurare) și își găsește singur entitățile; nu trebuie să scrii niciun județ sau nume de entitate. YAML-ul echivalent este doar:
+
+```yaml
+type: custom:alerte-meteo-card
+```
+
+Dacă ai configurat mai multe județe, poți alege unul cu codul lui: `judet: MS`. Dacă nu apare în lista de carduri, reîncarcă pagina cu cache-ul șters (Ctrl+F5 / în aplicație: Setări → Aplicație → Șterge cache frontend).
+
+## Carduri Lovelace din exemple (YAML)
 
 Cardurile din [`examples/`](examples/) nu conțin niciun județ scris de mână: își găsesc singure entitățile integrării și iau numele județului din atributul `judet` al lui `sensor.mesaj_meteo_<județ>`. Funcționează pentru orice județ ales la configurare; copiezi YAML-ul în dashboard, fără editări.
 

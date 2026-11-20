@@ -2,7 +2,10 @@
 from __future__ import annotations
 
 import logging
+from pathlib import Path
 
+from homeassistant.components import frontend
+from homeassistant.components.http import StaticPathConfig
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
@@ -17,9 +20,22 @@ PLATFORMS: list[Platform] = [Platform.SENSOR]
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Configurează integrarea dintr-un config entry."""
     hass.data.setdefault(DOMAIN, {})
+    await _async_register_card(hass)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.async_on_unload(entry.add_update_listener(_async_reload_on_update))
     return True
+
+
+async def _async_register_card(hass: HomeAssistant) -> None:
+    """Servește și încarcă automat cardul Lovelace `alerte-meteo-card` (o singură dată)."""
+    if hass.data[DOMAIN].get("card_registered"):
+        return
+    url = f"/{DOMAIN}_static/alerte-meteo-card.js"
+    path = Path(__file__).parent / "www" / "alerte-meteo-card.js"
+    await hass.http.async_register_static_paths([StaticPathConfig(url, str(path), False)])
+    version = path.stat().st_mtime_ns  # URL nou la fiecare actualizare => fără cache vechi
+    frontend.add_extra_js_url(hass, f"{url}?v={version}")
+    hass.data[DOMAIN]["card_registered"] = True
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
