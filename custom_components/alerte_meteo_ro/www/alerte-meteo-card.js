@@ -17,8 +17,11 @@ const render = (states, cfg) => {
   const now = new Date();
   // Entitățile integrării se descoperă după prefix; județul vine din integrare.
   const keyBy = (p) => Object.keys(states).filter(k => k.startsWith(p));
-  const SEL = resolveJudet(cfg && cfg.judet);   // județ ales în card (opțional)
-  const JC = SEL ? SEL.cod : (((states[keyBy('sensor.culoare_harta_')[0]] || {}).attributes || {}).judet_cod || '');
+  // entitățile rămase „indisponibile” (de ex. după schimbarea județului în integrare) sunt ignorate
+  const okKeys = (p) => keyBy(p).filter(k => !['unavailable', 'unknown'].includes((states[k] || {}).state));
+  const autoJC = ((states[okKeys('sensor.culoare_harta_')[0]] || {}).attributes || {}).judet_cod || '';
+  const SEL = resolveJudet(cfg && cfg.judet) || resolveJudet(autoJC);   // județul ales în card, altfel cel din integrare
+  const JC = SEL ? SEL.cod : autoJC;
   const MO = {ianuarie:0,februarie:1,martie:2,aprilie:3,mai:4,iunie:5,iulie:6,august:7,septembrie:8,octombrie:9,noiembrie:10,decembrie:11};
   const mkD = (x) => { let d = new Date(now.getFullYear(), MO[String(x[2]).toLowerCase()], parseInt(x[1], 10), parseInt(x[3], 10), 0, 0); if (d - now > 200 * 864e5) d = new Date(d.getFullYear() - 1, d.getMonth(), d.getDate(), d.getHours()); return d; };
   const parseIv = (s) => { const m = [...String(s || '').matchAll(/(\d+)\s+([a-zăâîșşțţ]+),\s*ora\s*(\d+)/gi)]; if (m.length < 2) return null; const a0 = mkD(m[0]); let e0 = mkD(m[1]); if (e0 < a0) e0 = new Date(e0.getFullYear() + 1, e0.getMonth(), e0.getDate(), e0.getHours()); return [a0, e0]; };
@@ -52,7 +55,7 @@ const render = (states, cfg) => {
   const nxt = wx.filter(w => w.c >= 1 && w.s > now && w.s - now < 48 * 36e5).sort((p, q) => p.s - q.s);
   
   // --- Mesajele ANM complete (folosite și pentru salt din rezumat) ---
-  const me = states[(SEL && states['sensor.mesaj_meteo_' + SEL.slug]) ? 'sensor.mesaj_meteo_' + SEL.slug : keyBy('sensor.mesaj_meteo_')[0]] || {}, txt = (me.attributes || {}).mesaj_complet || '';
+  const me = states[(SEL && states['sensor.mesaj_meteo_' + SEL.slug]) ? 'sensor.mesaj_meteo_' + SEL.slug : okKeys('sensor.mesaj_meteo_')[0]] || {}, txt = (me.attributes || {}).mesaj_complet || '';
   const ids = String(S('sensor.anm_avertizare_id').state || '').split(',').map(x => x.trim()).filter(x => x && x !== '0' && !['unavailable', 'unknown', 'none'].includes(x)).reverse();
   const txtS = String(txt);
   const heads = [...txtS.matchAll(/MESAJ\s+(\d+)\s*\/\s*(\d+)/gi)].map(m => `${m[1]}/${m[2]}`);
