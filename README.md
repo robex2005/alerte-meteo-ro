@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <a href="https://hacs.xyz"><img src="https://img.shields.io/badge/HACS-Custom-orange.svg" alt="HACS"></a>
+  <a href="#instalare"><img src="https://img.shields.io/badge/Marketplace-Custom-orange.svg" alt="Marketplace"></a>
   <a href="https://github.com/robex2005/alerte-meteo-ro/actions/workflows/validate.yml"><img src="https://github.com/robex2005/alerte-meteo-ro/actions/workflows/validate.yml/badge.svg" alt="Validate"></a>
   <a href="https://github.com/robex2005/alerte-meteo-ro/releases"><img src="https://img.shields.io/github/v/release/robex2005/alerte-meteo-ro" alt="Release"></a>
   <img src="https://img.shields.io/badge/Home%20Assistant-2024.12%2B-41BDF5.svg" alt="Home Assistant 2024.12+">
@@ -43,7 +43,7 @@ Integrare Home Assistant pentru **avertizările meteo ANM** (pe județ) și **al
 
 ## Instalare
 
-1. HACS → ⋮ → **Custom repositories** → `https://github.com/robex2005/alerte-meteo-ro` → categoria **Integration** → *Add*.
+1. **Marketplace → Adaugă prin link** (sau ⋮ → **Depozite personalizate** → **Adaugă prin link**) → `https://github.com/robex2005/alerte-meteo-ro` → **Adaugă**.
 2. Instalează **Alerte Meteo România** și repornește Home Assistant.
 3. **Setări → Dispozitive și servicii → Adaugă integrare → Alerte Meteo România.**
 
