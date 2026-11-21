@@ -94,7 +94,8 @@ const render = (states, cfg) => {
   const ids = String(S('sensor.anm_avertizare_id').state || '').split(',').map(x => x.trim()).filter(x => x && x !== '0' && !['unavailable', 'unknown', 'none'].includes(x)).reverse();
   const txtS = String(txt);
   const heads = [...txtS.matchAll(/MESAJ\s+(\d+)\s*\/\s*(\d+)/gi)].map(m => `${m[1]}/${m[2]}`);
-  const blocks = txtS.split(/MESAJ\s+\d+\s*\/\s*\d+/i).map(b => b.trim()).filter(Boolean);
+  // fără avertizări ANM trimite doar „Nu exista avertizari”: nu e un mesaj de afișat
+  const blocks = txtS.split(/MESAJ\s+\d+\s*\/\s*\d+/i).map(b => b.trim()).filter(b => b && /ATEN[ȚT]IONARE|AVERTIZARE|INFORMARE|\bCOD\s|Interval/i.test(b));
   // ANM scrie uneori „conform textelor” în loc de fenomen: îl luăm din mesajul complet cu același interval
   // textul mesajelor vine cu entități HTML (ex. v&acirc;ntului): le decodăm
   const dec = (t) => { try { const e = document.createElement('textarea'); e.innerHTML = t; return String(e.value).replace(/[<>]/g, ''); } catch (x) { return t; } };
@@ -162,7 +163,7 @@ const render = (states, cfg) => {
       ${nota ? `<div style="font-size:13px;line-height:1.45;margin-top:6px"><b>Notă:</b> ${nota}</div>` : ''}
       ${img}</div>`;
   }).join('');
-  let det = H3('Informații ANM · mesaj complet') + msgHtml;
+  let det = msgHtml ? H3('Informații ANM · mesaj complet') + msgHtml : '';
   det += `<div style="margin-top:14px;padding-top:10px;border-top:1px solid var(--divider-color);text-align:center"><a href="https://www.meteoromania.ro/avertizari/" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" style="pointer-events:auto;font-size:14px;font-weight:600;color:var(--primary-color);text-decoration:none">🔗 Avertizări pe meteoromania.ro (ANM)</a></div>`;
   
   // --- Antet pliabil: titlu, culoare și stare deschis/închis după avertizare ---

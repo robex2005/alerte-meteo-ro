@@ -1,7 +1,9 @@
 # Istoric versiuni
 
-## 2.0.1
-- Card: nu mai apare eroare JS (`allW.filter is not a function`) când ANM nu are avertizări și trimite textul „Nu exista avertizari” în loc de listă.
+## 2.1
+- Card: nu mai apare eroarea `allW.filter is not a function` când ANM nu are avertizări și trimite textul „Nu exista avertizari” în loc de listă.
+- Card: când ANM nu are niciun mesaj, nu se mai afișează un bloc gol de „mesaj complet” cu „Nu afectează <județ>”. Secțiunea apare doar când există mesaje reale.
+- Nowcasting: județul se recunoaște corect. O alertă putea fi atribuită greșit unui județ dacă numele lui apărea în numele unei localități din alt județ (ex. „Vărădia de Mureș”, din Arad, dădea alertă și notificare pentru Mureș). Acum județele se iau doar din „Județul X”, „județului X”, „județelor X, Y și Z” sau „Municipiul București”.
 
 ## 2.0
 - Notificări și pe WhatsApp, Telegram sau orice serviciu de notificare text, pe lângă aplicația Home Assistant.

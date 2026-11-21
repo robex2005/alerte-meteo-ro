@@ -244,23 +244,30 @@ class AlerteNowcastingCoordinator(DataUpdateCoordinator):
         """Extract county names from zona field."""
         counties = []
         
-        # Elimină tag-uri HTML
-        zona_clean = re.sub(r'<[^>]+>', '', zona)
-        
-        # Caută județe menționate în text
+        # Elimină tag-uri HTML; diacritice cu sedilă (ş, ţ) -> virgulă (ș, ț)
+        zona_clean = re.sub(r'<[^>]+>', ';', zona)
+        zona_clean = zona_clean.translate(str.maketrans("şţŞŢ", "șțȘȚ"))
+
+        # Județele se iau doar din „Județul X” / „județului X” / „județelor X, Y și Z”
+        # (și „Municipiul București”). Numele simplu nu ajunge: localități precum
+        # „Vărădia de Mureș” (Arad) ar fi atribuite greșit județului Mureș.
         # Exemplu: "Județul Cluj , zona de munte de peste 1800 m;"
+        lists = re.findall(r'jude[țt]elor\s+([^;:\n]+)', zona_clean, re.IGNORECASE)
         for county in ROMANIAN_COUNTIES:
-            # Variantele posibile: "Județul X", "judetul X", "X"
-            patterns = [
-                rf'jude[țt]ul\s+{re.escape(county)}',
-                rf'\b{re.escape(county)}\b',
-            ]
-            for pattern in patterns:
-                if re.search(pattern, zona_clean, re.IGNORECASE):
-                    if county not in counties:
-                        counties.append(county)
-                    break
-        
+            name = rf'{re.escape(county)}(?!\w)'
+            if (
+                re.search(rf'jude[țt]ul(?:ui)?\s+{name}', zona_clean, re.IGNORECASE)
+                or (county == "București" and re.search(rf'municipiul(?:ui)?\s+{name}', zona_clean, re.IGNORECASE))
+                or any(re.search(rf'(?<!\w){name}', lst, re.IGNORECASE) for lst in lists)
+            ):
+                counties.append(county)
+
+        # Format neașteptat (fără „Județul ...”): caută numele simplu, ca înainte
+        if not counties:
+            for county in ROMANIAN_COUNTIES:
+                if re.search(rf'(?<!\w){re.escape(county)}(?!\w)', zona_clean, re.IGNORECASE):
+                    counties.append(county)
+
         return counties
     
     def _detect_phenomena(self, description: str) -> str:
