@@ -23,7 +23,7 @@
   <a href="#card">Card</a> ·
   <a href="#carduri-manuale-examples">Carduri manuale</a> ·
   <a href="CHANGELOG.md">Istoric</a> ·
-  <a href="https://translate.google.com/translate?sl=ro&tl=en&u=https://github.com/robex2005/alerte-meteo-ro"><img src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f1ec-1f1e7.svg" width="16" alt="EN"> English</a>
+  <a href="README.en.md"><img src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f1ec-1f1e7.svg" width="16" alt="EN"> English</a>
 </p>
 
 ---
