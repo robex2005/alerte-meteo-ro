@@ -7,20 +7,150 @@ import re
 import json
 import asyncio
 import os
+import aiohttp
 import async_timeout
+import xml.etree.ElementTree as ET
+from contextlib import asynccontextmanager
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.storage import Store
+from homeassistant.util import dt as dt_util
 
 _LOGGER = logging.getLogger(__name__)
 
 JSON_URL = "https://www.meteoromania.ro/wp-json/meteoapi/v2/avertizari-generale"
+XML_URL = "https://www.meteoromania.ro/avertizari-xml.php"  # rezervă când JSON-ul nu răspunde
+XML_PROBE_EVERY = timedelta(minutes=10)  # cât de des verificăm XML-ul când JSON-ul merge
+# Timeout pe cerere (totalul unei actualizări rămâne limitat la 25 s): JSON 12 s + XML 12 s.
+REQ_TIMEOUT = aiohttp.ClientTimeout(total=12)
+PROBE_TIMEOUT = aiohttp.ClientTimeout(total=8)
 HTML_URL = "https://www.meteoromania.ro/avertizari/"
+
+# Ultimele avertizări primite de la ANM se păstrează pe disc, ca să rămână vizibile
+# (până la expirare) dacă serverul ANM nu răspunde sau Home Assistant repornește.
+CACHE_VERSION = 1
+CACHE_KEY = "alerte_meteo_ro.anm_cache"
+RO_TZ = ZoneInfo("Europe/Bucharest")           # ANM publică orele în ora României
+CACHE_MAX_AGE_FARA_EXPIRARE = timedelta(hours=12)  # avertizare fără dată de expirare
+
+
+def _xml_to_data(text):
+    """Transformă XML-ul ANM (avertizari-xml.php) în aceeași structură ca JSON-ul API-ului.
+
+    Păstrăm doar atributele folosite (fără coordGis, care e foarte mare). Ridică ValueError
+    dacă răspunsul nu e un XML <avertizari> valid.
+    """
+    try:
+        root = ET.fromstring(text)
+    except ET.ParseError as e:
+        raise ValueError(f"XML ANM invalid: {e}")
+    if root.tag != "avertizari":
+        raise ValueError(f"XML ANM neașteptat: <{root.tag}>")
+    avertizari = []
+    for av in root.findall("avertizare"):
+        judete = [
+            {"@attributes": {"cod": j.get("cod"), "culoare": j.get("culoare")}}
+            for j in av.findall("judet")
+        ]
+        avertizari.append({"@attributes": dict(av.attrib), "judet": judete})
+    return {"avertizare": avertizari} if avertizari else {}
+
+
+class _Resp:
+    """Răspuns ANM unificat (JSON sau XML), cu aceeași interfață folosită în async_update."""
+
+    def __init__(self, status, data=None):
+        self.status, self._data = status, data
+
+    async def json(self):
+        return self._data
+
+
+def _expirata(item, salvat, acum):
+    """True dacă avertizarea din cache nu mai e valabilă."""
+    try:
+        exp = datetime.fromisoformat(str(item.get("data_expirarii")))
+    except (TypeError, ValueError):
+        # fără dată de expirare: o păstrăm doar o perioadă limitată
+        return salvat is None or acum - salvat > CACHE_MAX_AGE_FARA_EXPIRARE
+    if exp.tzinfo is None:
+        exp = exp.replace(tzinfo=RO_TZ)
+    return exp <= acum
+
 
 class ANMAlertSensor(Entity):
     def __init__(self, hass):
         self._hass = hass
         self._state = None
         self._attributes = {}
+        self._store = Store(hass, CACHE_VERSION, CACHE_KEY)
+        self._good = None        # ultima listă primită de la ANM (poate fi goală)
+        self._good_time = None   # când a fost primită
+        # starea API-ului ANM (pentru senzorul „ANM API”)
+        self._api_ok = None      # True / False / None (încă neîncercat)
+        self._api_status = None  # cod HTTP al ultimei încercări
+        self._api_error = None   # mesaj, dacă a fost excepție (timeout etc.)
+        self._api_fails = 0      # încercări eșuate la rând
+        self._api_fail_time = None
+        self._api_source = None  # "json" sau "xml" (rezervă), ultima sursă folosită cu succes
+        self._json_ok = None     # starea fiecărei surse: True / False / None (încă neverificată)
+        self._xml_ok = None
+        self._xml_probe_time = None
+
+    def _api_up(self):
+        self._api_ok, self._api_status, self._api_error, self._api_fails = True, 200, None, 0
+
+    def _api_down(self, status, error=None):
+        self._api_ok, self._api_status, self._api_error = False, status, error
+        self._api_fails += 1
+        self._api_fail_time = dt_util.utcnow()
+
+    async def async_load_cache(self):
+        """Încarcă ultimele date bune de pe disc (apelat o dată, înainte de prima actualizare)."""
+        try:
+            data = await self._store.async_load()
+        except Exception as e:  # fișier corupt etc.: pornim fără cache
+            _LOGGER.warning(f"Cache ANM ilizibil, îl ignor: {e}")
+            return
+        if not isinstance(data, dict) or not isinstance(data.get("avertizari"), list):
+            return
+        try:
+            self._good_time = dt_util.parse_datetime(data.get("saved") or "")
+        except Exception:
+            self._good_time = None
+        self._good = data["avertizari"]
+        self._apply_good(din_cache=True)
+        _LOGGER.info("Avertizări ANM restaurate din cache (%d)", len(self._good))
+
+    def _save_good(self):
+        good, saved = self._good, self._good_time
+        self._store.async_delay_save(
+            lambda: {"avertizari": good, "saved": saved.isoformat() if saved else None}, 5
+        )
+
+    def _apply_good(self, din_cache=False):
+        """Afișează ultimele date bune, fără avertizările expirate."""
+        acum = dt_util.now()
+        alive = [a for a in (self._good or []) if not _expirata(a, self._good_time, acum)]
+        attrs = {"friendly_name": "Avertizări Meteo ANM"}
+        if alive:
+            self._state = "active"
+            attrs["avertizari"] = alive
+        else:
+            self._state = "inactive"
+            attrs["avertizari"] = "Nu exista avertizari"
+        if din_cache:
+            attrs["sursa"] = "cache"
+            if self._good_time:
+                attrs["ultima_actualizare_anm"] = self._good_time.isoformat()
+        self._attributes = attrs
+
+    def _serve_cache_on_failure(self):
+        """ANM nu răspunde: păstrăm ultimele date bune cât sunt valabile."""
+        if self._good is not None:
+            self._apply_good(din_cache=True)
 
     @property
     def name(self):
@@ -42,12 +172,66 @@ class ANMAlertSensor(Entity):
     def unique_id(self):
         return "anm_avertizari_meteo"
 
+    @asynccontextmanager
+    async def _fetch_anm(self, session):
+        """JSON-ul API-ului; dacă nu răspunde (502, timeout etc.), XML-ul de pe site ca rezervă.
+
+        O singură încercare pe sursă la fiecare actualizare (fără reîncercări). Fiecare cerere are
+        timeout propriu, ca un API care nu răspunde deloc să lase timp și pentru XML.
+        Cererile sunt făcute înainte de `yield`, ca o eroare la procesarea datelor să nu
+        declanșeze din greșeală rezerva XML.
+        """
+        json_status, json_err, json_data, json_ok = None, None, None, False
+        try:
+            async with session.get(JSON_URL, timeout=REQ_TIMEOUT) as r:
+                json_status = r.status
+                if r.status == 200:
+                    json_data, json_ok = await r.json(), True
+        except Exception as e:  # timeout, JSON invalid etc.: încercăm XML-ul
+            json_err = e
+        if json_ok:
+            self._api_source, self._json_ok = "json", True
+            # JSON ok: verificăm din când în când și XML-ul, ca să știm dacă rezerva e disponibilă
+            await self._probe_xml(session)
+            yield _Resp(200, json_data)
+            return
+
+        self._json_ok = False
+        xml_data = None
+        try:
+            async with session.get(XML_URL, timeout=REQ_TIMEOUT) as r:
+                if r.status == 200:
+                    xml_data = _xml_to_data(await r.text())
+        except Exception as e:
+            _LOGGER.debug("Rezerva XML ANM a eșuat: %s", e)
+        self._xml_ok, self._xml_probe_time = xml_data is not None, dt_util.utcnow()
+        if xml_data is not None:
+            self._api_source = "xml"
+            _LOGGER.warning("API-ul JSON ANM indisponibil (%s), folosesc XML-ul", json_status or json_err)
+            yield _Resp(200, xml_data)
+            return
+        if json_err is not None:
+            raise json_err
+        yield _Resp(json_status)
+
+    async def _probe_xml(self, session):
+        """Cât timp JSON-ul merge, verifică doar starea XML-ului (cel mult o dată la XML_PROBE_EVERY)."""
+        acum = dt_util.utcnow()
+        if self._xml_probe_time and acum - self._xml_probe_time < XML_PROBE_EVERY:
+            return
+        self._xml_probe_time = acum
+        try:
+            async with session.get(XML_URL, timeout=PROBE_TIMEOUT) as r:
+                self._xml_ok = r.status == 200
+        except Exception:
+            self._xml_ok = False
+
     async def async_update(self, now=None):
         _LOGGER.debug("Actualizare date Avertizări Meteo ANM")
         try:
-            async with async_timeout.timeout(10):
+            async with async_timeout.timeout(25):
                 session = async_get_clientsession(self._hass)
-                async with session.get(JSON_URL) as response:
+                async with self._fetch_anm(session) as response:
                     if response.status == 200:
                         data = await response.json()
                         if not data or isinstance(data, str):
@@ -57,6 +241,10 @@ class ANMAlertSensor(Entity):
                                 "avertizari": "Nu exista avertizari",
                                 "friendly_name": "Avertizări Meteo ANM"
                             }
+                            # răspuns valid de la ANM („nu sunt avertizări”): înlocuiește cache-ul
+                            self._good, self._good_time = [], dt_util.utcnow()
+                            self._api_up()
+                            self._save_good()
                             return
 
                         toate_avertizarile = []
@@ -102,11 +290,60 @@ class ANMAlertSensor(Entity):
                                 "avertizari": "Nu exista avertizari",
                                 "friendly_name": "Avertizări Meteo ANM"
                             }
+                        # date proaspete de la ANM: înlocuiesc imediat orice a ținut minte cache-ul
+                        self._good, self._good_time = toate_avertizarile, dt_util.utcnow()
+                        self._api_up()
+                        self._save_good()
                         _LOGGER.info("Senzor ANM actualizat cu succes.")
                     else:
                         _LOGGER.error(f"Eroare HTTP {response.status} la preluarea datelor ANM")
+                        self._api_down(response.status)
+                        self._serve_cache_on_failure()
         except Exception as e:
             _LOGGER.error(f"Eroare la actualizarea datelor ANM: {e}")
+            self._api_down(None, str(e) or type(e).__name__)
+            self._serve_cache_on_failure()
+
+
+class ANMApiStatusSensor(Entity):
+    """Arată dacă API-ul ANM răspunde (online) sau nu (offline). Istoricul lui arată când a fost căzut."""
+
+    def __init__(self, alert_sensor):
+        self._alert = alert_sensor
+
+    @property
+    def name(self):
+        return "ANM API"
+
+    @property
+    def unique_id(self):
+        return "anm_api_status"
+
+    @property
+    def icon(self):
+        return "mdi:cloud-check" if self._alert._api_ok else "mdi:cloud-alert"
+
+    @property
+    def state(self):
+        if self._alert._api_ok is None:
+            return None
+        return "online" if self._alert._api_ok else "offline"
+
+    @property
+    def extra_state_attributes(self):
+        a = self._alert
+        iso = lambda d: d.isoformat() if d else None
+        return {
+            "sursa": a._api_source,
+            "json": None if a._json_ok is None else ("online" if a._json_ok else "offline"),
+            "xml": None if a._xml_ok is None else ("online" if a._xml_ok else "offline"),
+            "cod_http": a._api_status,
+            "eroare": a._api_error,
+            "esecuri_la_rand": a._api_fails,
+            "ultima_reusita": iso(a._good_time),
+            "ultimul_esec": iso(a._api_fail_time),
+            "friendly_name": "ANM API",
+        }
 
 
 class ANMAlertIDSensor(Entity):

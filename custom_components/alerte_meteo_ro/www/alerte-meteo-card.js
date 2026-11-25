@@ -66,7 +66,10 @@ const render = (states, cfg) => {
     const ZN = { munte: 'zone de munte', litoral: 'litoral' };
     const zoneNames = [...new Set(Object.values(zA).flatMap(z => (z && typeof z === 'object') ? Object.keys(z) : []))].map(k => ZN[k] || (/^alt(\d+)$/.test(k) ? 'peste ' + k.replace('alt', '') + ' m' : k)).join(', ');
     allW.filter(w => w && typeof w === 'object' && w.judet === ANMJ.cod).forEach(w => {
-      const p = parseIv(w.intervalul); if (!p) return;
+      let p = parseIv(w.intervalul);
+      // ANM scrie uneori „conform textelor” în loc de interval: folosim datele de apariție/expirare din listă
+      if (!p) { const a = new Date(w.data_aparitiei), e = new Date(w.data_expirarii); if (!isNaN(a) && !isNaN(e) && e > a) p = [a, e]; }
+      if (!p) return;
       let c = parseInt(w.culoare, 10) || 0;
       // ANM trimite uneori `culoare: 0` pentru intervalul activ; atunci folosim culoarea județului de pe hartă
       let loc = '';
@@ -110,6 +113,8 @@ const render = (states, cfg) => {
   // există un mesaj complet pentru acest interval? (atunci blocul din rezumat devine clicabil)
   const hasMsg = (w) => blocks.some(b => { const iv = (b.match(/^\s*Interval[^:\n]*:\s*([^\n]+)/im) || [])[1]; const p = parseIv(iv); return !!(p && Math.abs(w.s - p[0]) < 6e4 && Math.abs(w.e - p[1]) < 6e4); });
   // salt la mesajul complet: deschide cardul, derulează până la mesaj și îl evidențiază scurt
+  // numărul mesajului ANM (ex. „2/2”) care corespunde intervalului unei alerte, sau '' dacă nu are text detaliat
+  const msgNo = (w) => { const i = blocks.findIndex(b => { const iv = (b.match(/^\s*Interval[^:\n]*:\s*([^\n]+)/im) || [])[1]; const p = parseIv(iv); return !!(p && Math.abs(w.s - p[0]) < 6e4 && Math.abs(w.e - p[1]) < 6e4); }); return i >= 0 ? (heads[i] || String(i + 1)) : ''; };
   const GO = "(function(el){var d=el.closest('details');if(!d)return;var s=el.dataset.s,e=el.dataset.e,c=el.dataset.c;var t=[].slice.call(d.querySelectorAll('[data-msg]')).filter(function(m){return m.dataset.s===s&&m.dataset.e===e;});if(t.length>1){var t2=t.filter(function(m){return m.dataset.c===c;});if(t2.length)t=t2;}if(!t.length)t=[].slice.call(d.querySelectorAll('[data-msg]'));if(!t.length)return;d.open=true;var m=t[0];m.scrollIntoView({behavior:'smooth',block:'start'});m.style.transition='box-shadow .3s';m.style.boxShadow='0 0 0 2px var(--primary-color)';setTimeout(function(){m.style.boxShadow='';},2000);})(this)";
   
   const pill = (c) => `<span style="background:${CC[c]};color:${TX[c]};padding:1px 7px;border-radius:5px;font-weight:700;font-size:12px;white-space:nowrap;flex:none">COD ${CN[c].toUpperCase()}</span>`;
@@ -121,7 +126,10 @@ const render = (states, cfg) => {
   const fenRows = (f) => (fenList(f).length ? fenList(f) : ['fenomen violent iminent']).map(x => row(emo(x), cap(x))).join('');
   const head = (c, nc, zone) => `<div style="display:flex;align-items:center;gap:8px">${pill(c)}${nc ? '<span style="font-size:12px;font-weight:700;white-space:nowrap;flex:none">⚡ Nowcasting</span>' : ''}<span style="flex:1;min-width:0;text-align:right;font-size:13px;font-weight:600;${NW}">${zone}</span></div>`;
   // bloc scurt: cod (+ nowcasting) · zonă / ora / fenomene una sub alta
-  const item = (o) => { const go = !!(o.w && hasMsg(o.w)); return `<div ${go ? `data-s="${o.w.s.getTime()}" data-e="${o.w.e.getTime()}" data-c="${o.w.c}" onclick="${GO}" onpointerup="if(event.pointerType==='touch')${GO}" title="Mergi la mesajul complet ANM"` : ''} style="border:1.5px solid ${CC[o.c]};border-radius:10px;padding:7px 10px;margin:8px 0${go ? ';cursor:pointer' : ''}">${head(o.c, o.nc, o.zone)}<div style="font-size:13px;margin-top:4px;${NW}">🕒 ${o.time}</div>${fenRows(o.f)}</div>`; };
+  // fundal în culoarea alertei: 'a' = activă acum (mai intens), 'n' = urmează (mai discret)
+  const NEW = true;
+  const BGK = (c, k) => NEW && k ? `background:color-mix(in srgb, ${CC[c]} ${k === 'a' ? 15 : 6}%, transparent);` : '';
+  const item = (o) => { const go = !!(o.w && hasMsg(o.w)); return `<div ${go ? `data-s="${o.w.s.getTime()}" data-e="${o.w.e.getTime()}" data-c="${o.w.c}" onclick="${GO}" onpointerup="if(event.pointerType==='touch')${GO}" title="Mergi la mesajul complet ANM"` : ''} style="${BGK(o.c, o.k)}border:1.5px solid ${CC[o.c]};border-radius:10px;padding:7px 10px;margin:8px 0${go ? ';cursor:pointer' : ''}">${head(o.c, o.nc, o.zone)}<div style="font-size:13px;margin-top:4px;${NW}">🕒 ${o.time}${NEW && o.w && blocks.length ? (go ? ` · 📄 Mesaj ${msgNo(o.w)}` : ' · fără text ANM') : ''}</div>${fenRows(o.f)}</div>`; };
   const ncEnd = (s) => { const m = String(s).match(/(\d{1,2}):(\d{2})/); if (!m) return null; const d = new Date(now); d.setHours(+m[1], +m[2], 0, 0); if (d < now - 36e5) d.setDate(d.getDate() + 1); return d; };
   const zn = (w) => w.loc ? `📍 ${w.loc}` : w.j;
   const tEnd = (e) => `${dl(e) === 'azi' ? 'până la' : 'până ' + dl(e) + ' la'} ${hm(e)}`;
@@ -131,11 +139,11 @@ const render = (states, cfg) => {
   let h = '';
   if (act.length || ncC >= 1) {
     h += H3('Acum');
-    h += ncs.map(n => { const e = ncEnd(n.end); return item({ c: n.c, nc: true, zone: n.j, time: e ? tEnd(e) : 'acum', f: n.f }); }).join('');
-    h += act.map(w => item({ c: w.c, zone: zn(w), time: tEnd(w.e), f: w.f, w })).join('');
+    h += ncs.map(n => { const e = ncEnd(n.end); return item({ c: n.c, k: 'a', nc: true, zone: n.j, time: e ? tEnd(e) : 'acum', f: n.f }); }).join('');
+    h += act.map(w => item({ c: w.c, k: 'a', zone: zn(w), time: tEnd(w.e), f: w.f, w })).join('');
   }
-  if (nxt.length) { h += H3('Urmează'); h += nxt.map(w => item({ c: w.c, zone: zn(w), time: tNext(w), f: w.f, w })).join(''); }
-  if (!act.length && ncC < 1 && !nxt.length) h += `<div style="font-size:14px;padding:6px 2px">✅ Nicio avertizare activă sau în următoarele 48h.</div>`;
+  if (nxt.length) { h += H3('Urmează'); h += nxt.map(w => item({ c: w.c, k: 'n', zone: zn(w), time: tNext(w), f: w.f, w })).join(''); }
+  if (!act.length && ncC < 1 && !nxt.length) h += `<div style="font-size:13.5px;padding:6px 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">✅ Fără avertizări acum sau în următoarele 48h</div>`;
 
   // --- Detalii ANM: mesajul complet + harta ---
   const msgHtml = blocks.map((b, i) => {
@@ -148,14 +156,17 @@ const render = (states, cfg) => {
     const p = parseIv(iv);
     const mw = p ? wxc.find(w => Math.abs(w.s - p[0]) < 6e4 && Math.abs(w.e - p[1]) < 6e4) : null;
     const rel = !!mw;
+    const kMsg = mw ? (act.indexOf(mw) >= 0 ? 'a' : nxt.indexOf(mw) >= 0 ? 'n' : '') : '';   // același fundal ca în rezumat
     const col = CC[cc] || '#888', mid = ids[i];
     const J = ANMJ ? ANMJ.nume : (SEL ? SEL.nume : '');
     const zr = rel ? `📍 Zona ta${mw.loc ? ' · ' + mw.loc : ''}` : `Nu afectează ${J}`;
     const ivS = p ? tNext({ s: p[0], e: p[1] }) : iv;
     const img = mid ? `<img loading="lazy" src="https://images.weserv.nl/?url=${encodeURIComponent('https://www.meteoromania.ro/wp-content/plugins/meteo/harti/harta.svg.php?id_avertizare=' + mid)}" style="width:100%;max-width:380px;display:block;margin:8px auto 2px;border-radius:8px">` : '';
-    return `<div data-msg="1" data-s="${p ? p[0].getTime() : ''}" data-e="${p ? p[1].getTime() : ''}" data-c="${cc}" style="scroll-margin-top:90px;border:1.5px solid ${col};border-radius:10px;padding:7px 10px;margin:8px 0;${rel ? '' : 'opacity:.6'}">
+    return `<div data-msg="1" data-s="${p ? p[0].getTime() : ''}" data-e="${p ? p[1].getTime() : ''}" data-c="${cc}" style="scroll-margin-top:90px;${BGK(cc, kMsg)}border:1.5px solid ${col};border-radius:10px;padding:7px 10px;margin:8px 0;${rel ? '' : 'opacity:.6'}">
       <div style="display:flex;align-items:center;gap:8px">${cc ? pill(cc) : '<b style="font-size:13px">MESAJ</b>'}<span style="flex:1;min-width:0;text-align:right;font-size:13px;font-weight:600;${NW}">${zr}</span></div>
-      <div style="font-size:12px;opacity:.75;margin-top:4px;${NW}">${cap(typ.toLowerCase())} · Mesaj ${heads[i] || i + 1}</div>
+      ${NEW && (kMsg || (p && p[1] <= now))
+        ? `<div style="display:flex;align-items:center;gap:6px;font-size:12px;margin-top:4px;${NW}"><span style="background:${kMsg ? CC[cc] || '#888' : 'rgba(127,127,127,.35)'};color:${kMsg ? TX[cc] || '#fff' : 'var(--primary-text-color)'};padding:0 7px;border-radius:5px;font-weight:700;flex:none">${kMsg === 'a' ? 'ACUM' : kMsg === 'n' ? 'URMEAZĂ' : 'EXPIRAT'}</span><span style="opacity:.75;${NW}">${cap(typ.toLowerCase())} · Mesaj ${heads[i] || i + 1}</span></div>`
+        : `<div style="font-size:12px;opacity:.75;margin-top:4px;${NW}">${cap(typ.toLowerCase())} · Mesaj ${heads[i] || i + 1}</div>`}
       ${ivS ? `<div style="font-size:13px;margin-top:3px">🕒 ${ivS}</div>` : ''}
       ${fen ? fenRows(fen) : ''}
       ${zone ? row('🗺️', zone) : ''}
@@ -164,7 +175,7 @@ const render = (states, cfg) => {
       ${img}</div>`;
   }).join('');
   let det = msgHtml ? H3('Informații ANM · mesaj complet') + msgHtml : '';
-  det += `<div style="margin-top:14px;padding-top:10px;border-top:1px solid var(--divider-color);text-align:center"><a href="https://www.meteoromania.ro/avertizari/" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" style="pointer-events:auto;font-size:14px;font-weight:600;color:var(--primary-color);text-decoration:none">🔗 Avertizări pe meteoromania.ro (ANM)</a></div>`;
+  if (act.length || ncC >= 1 || nxt.length || msgHtml) det += `<div style="margin-top:14px;padding-top:10px;border-top:1px solid var(--divider-color);text-align:center"><a href="https://www.meteoromania.ro/avertizari/" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" style="pointer-events:auto;font-size:14px;font-weight:600;color:var(--primary-color);text-decoration:none">🔗 Avertizări pe meteoromania.ro (ANM)</a></div>`;
   
   // --- Antet pliabil: titlu, culoare și stare deschis/închis după avertizare ---
   const top = Math.max(act.length ? act[0].c : 0, ncC, nxt.length ? nxt[0].c : 0);
@@ -179,9 +190,46 @@ const render = (states, cfg) => {
   const fg = has ? TX[top] : 'var(--primary-text-color)';
   const title = has ? 'AVERTIZARE METEO ACTIVĂ' : 'NICIO AVERTIZARE METEO';
   const icon = has ? 'mdi:alert' : 'mdi:check-circle-outline';
+  // --- Footer (jos de tot, mereu vizibil, și când cardul e colapsat) ---
+  // Rândul 1: bulină API ANM (sensor.anm_api): verde = online, roșie cu fade = căzut, + sursa (API/XML) și cât de proaspete sunt datele.
+  // Rândul 2: o informație utilă după situație: cât mai durează alerta, când începe următoarea sau „cod verde”.
+  const apiE = S('sensor.anm_api'), apiS = apiE.state, apiA = apiE.attributes || {};
+  let ftL1 = '';
+  if (apiS === 'online' || apiS === 'offline') {
+    const off = apiS === 'offline';
+    let luD = null; try { if (apiA.ultima_reusita) { luD = new Date(apiA.ultima_reusita); if (isNaN(luD)) luD = null; } } catch (e) {}
+    const ago = luD ? (now - luD < 6e4 ? 'chiar acum' : 'acum ' + rem(now - luD)) : '';
+    // Două surse, fiecare cu bulina ei: ANM (API JSON) și XML (rezerva de pe site).
+    // verde = online, roșu clipind = căzut, gri = încă neverificat. Dacă senzorul vechi nu are atributele json/xml, folosim starea generală.
+    const stOf = (v, fb) => (v === 'online' ? 1 : v === 'offline' ? 0 : fb);
+    const jOk = stOf(apiA.json, apiA.sursa === 'json' ? 1 : (off ? 0 : null));
+    const xOk = stOf(apiA.xml, apiA.sursa === 'xml' ? 1 : (off ? 0 : null));
+    const dot = (ok) => `<span style="flex:none;width:9px;height:9px;border-radius:50%;background:${ok === 1 ? '#2ecc71' : ok === 0 ? '#e53935' : '#9e9e9e'};box-shadow:0 0 0 2px var(--card-background-color,#fff),0 0 0 3px rgba(127,127,127,.5)${ok === 0 ? ';animation:amr-blink 1.4s ease-in-out infinite' : ''}"></span>`;
+    // sursa folosită acum pentru date (sensor.anm_api › sursa): eticheta ei primește fundal colorat; cealaltă e estompată.
+    // Când ambele sunt online, ANM (API) are prioritate; XML intră când API-ul nu răspunde.
+    const used = off ? '' : (apiA.sursa === 'xml' ? 'xml' : apiA.sursa === 'json' ? 'json' : '');
+    const src = (ok, lbl, tip, key) => { const on = used === key; return `<span title="${tip}${on ? ' · sursa folosită acum' : ''}" style="display:inline-flex;align-items:center;gap:5px;font-weight:${on ? 800 : 600};${on ? 'background:color-mix(in srgb, #2ecc71 24%, transparent);border-radius:6px;padding:1px 8px 1px 5px' : (used ? 'opacity:.6' : '')}">${dot(ok)}${lbl}</span>`; };
+    const tJ = jOk === 1 ? 'API-ul ANM răspunde normal.' : jOk === 0 ? 'API-ul ANM (JSON) nu răspunde' + (apiA.cod_http && apiA.sursa !== 'xml' ? ' (HTTP ' + apiA.cod_http + ')' : '') + '.' : 'API-ul ANM: încă neverificat.';
+    const tX = xOk === 1 ? 'Fluxul XML de pe meteoromania.ro răspunde' + (apiA.sursa === 'xml' ? ' și e sursa folosită acum.' : ' (rezervă disponibilă).') : xOk === 0 ? 'Fluxul XML de pe meteoromania.ro nu răspunde.' : 'Fluxul XML: încă neverificat (se verifică doar când API-ul ANM nu merge sau periodic).';
+    // scurt: ora ultimei actualizări reușite (🕒 20:20); dacă ANM e căzut, adaugă „salvate” (date din cache)
+    const tail = luD ? `🕒 ${dl(luD) === 'azi' ? '' : dl(luD) + ' '}${hm(luD)}${off ? ' · cache' : ''}` : (off ? 'fără date' : '');
+    ftL1 = `<div style="display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:4px 14px">${src(jOk, 'API', tJ, 'json')}${src(xOk, 'XML', tX, 'xml')}${tail ? `<span style="opacity:.8;min-width:0;white-space:nowrap">${tail}</span>` : ''}</div>`;
+  }
+  let ftFact;
+  if (act.length) {
+    ftFact = '';   // avertizare activă: fără rând suplimentar (starea se vede deja în antet)
+  } else if (ncC >= 1) {
+    const e = ncEnd(ncs[0].end);
+    ftFact = `⚡ Nowcasting cod ${CN[ncC]} activ${e ? ' până la <b>' + hm(e) + '</b>' : ''}`;
+  } else if (nxt.length) {
+    ftFact = `🕒 Următoarea avertizare (cod ${CN[nxt[0].c]}) începe în <b>${rem(nxt[0].s - now)}</b> (${dl(nxt[0].s)} ${hm(nxt[0].s)})`;
+  } else {
+    ftFact = '';   // cod verde: doar rândul API/XML + ora
+  }
+  const footerH = `<div style="display:flex;flex-direction:column;gap:3px;padding:7px 12px 8px;border-top:1px solid var(--divider-color);background:color-mix(in srgb, var(--primary-text-color) 4%, transparent);font-size:12px;line-height:1.35;text-align:center">${ftL1}${ftFact ? `<div style="opacity:.85;min-width:0;overflow-wrap:anywhere">${ftFact}</div>` : ''}</div>`;
   // Antet compact: un singur rând și pe telefon (text mic, fără text suplimentar;
   // codul culorii se vede din culoarea antetului și din pastilele din card).
-  return `<style>.amr summary{list-style:none}.amr summary::-webkit-details-marker{display:none}.amr[open] .amr-chev{transform:rotate(180deg)}.amr-chev{transition:transform .2s}</style>
+  return `<style>.amr summary{list-style:none}.amr summary::-webkit-details-marker{display:none}.amr[open] .amr-chev{transform:rotate(180deg)}.amr-chev{transition:transform .2s}@keyframes amr-blink{50%{opacity:.35}}</style>
   <details class="amr" ${open ? 'open' : ''} ontoggle="try{localStorage.setItem('${SK}',JSON.stringify({status:'${status}',open:this.open}))}catch(e){}" style="text-align:left;pointer-events:auto">
     <summary style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:9px 12px;background:${bg};color:${fg};font-weight:800;font-size:12.5px;line-height:1.2;text-transform:uppercase;letter-spacing:.2px">
       <ha-icon icon="${icon}" style="--mdc-icon-size:20px;flex:none"></ha-icon>
@@ -189,6 +237,7 @@ const render = (states, cfg) => {
       <ha-icon class="amr-chev" icon="mdi:chevron-down" style="--mdc-icon-size:20px;flex:none"></ha-icon>
     </summary>
     <div style="padding:6px 14px 14px">${h}${det}</div>
+    ${footerH}
   </details>`;
   
 };
@@ -204,7 +253,7 @@ class AlerteMeteoCard extends HTMLElement {
   set hass(hass) {
     this._hass = hass;
     if (!this._card) this._build();
-    const st = hass.states, ids = Object.keys(st).filter(k => k.startsWith('sensor.avertizari_meteo_anm') || k.startsWith('sensor.mesaj_meteo_') || k.startsWith('sensor.culoare_harta_') || k.startsWith('sensor.alerta_nowcasting_') || k === 'sensor.anm_avertizare_id');
+    const st = hass.states, ids = Object.keys(st).filter(k => k.startsWith('sensor.avertizari_meteo_anm') || k.startsWith('sensor.mesaj_meteo_') || k.startsWith('sensor.culoare_harta_') || k.startsWith('sensor.alerta_nowcasting_') || k === 'sensor.anm_avertizare_id' || k === 'sensor.anm_api');
     const sig = ids.map(k => k + st[k].last_updated).join('|') + '|' + Math.floor(Date.now() / 60000);
     if (sig === this._sig) return;
     this._sig = sig;

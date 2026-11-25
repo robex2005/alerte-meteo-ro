@@ -12,6 +12,7 @@ from homeassistant.helpers.event import async_track_time_interval
 from .anm import (
     ANMAlertIDSensor,
     ANMAlertSensor,
+    ANMApiStatusSensor,
     ANMMapColorSensor,
     ANMMapSensor,
     ANMMessageSensor,
@@ -58,7 +59,8 @@ async def async_setup_entry(
     message_sensor = ANMMessageSensor(hass, judet_cod, judet_nume, alert_sensor)
     map_sensor = ANMMapSensor(hass, judet_cod, judet_nume, id_sensor)
     color_sensor = ANMMapColorSensor(hass, judet_cod, judet_nume, id_sensor)
-    anm_entities = [alert_sensor, id_sensor, message_sensor, map_sensor, color_sensor]
+    api_sensor = ANMApiStatusSensor(alert_sensor)
+    anm_entities = [alert_sensor, id_sensor, message_sensor, map_sensor, color_sensor, api_sensor]
 
     async def update_anm(now=None) -> None:
         _LOGGER.debug("Actualizare senzori ANM")
@@ -91,6 +93,9 @@ async def async_setup_entry(
         "judet_cod": judet_cod,
         "judet_nume": judet_nume,
     }
+
+    # Ultimele avertizări ANM de pe disc: rămân vizibile (până expiră) dacă ANM nu răspunde la pornire.
+    await alert_sensor.async_load_cache()
 
     # Prima actualizare înainte de adăugare, ca senzorii să aibă valori imediat.
     await update_anm()

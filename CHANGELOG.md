@@ -1,5 +1,12 @@
 # Istoric versiuni
 
+## 3.0
+- Rezervă automată: când API-ul ANM nu răspunde, datele se iau din fluxul XML de pe meteoromania.ro.
+- Ultimele avertizări rămân salvate până expiră, și după un restart sau o pană ANM.
+- Senzor nou `sensor.anm_api`: starea API-ului ANM și sursa folosită (API sau XML).
+- Intervalul și fenomenele se completează corect și când ANM scrie „conform textelor”.
+- Îmbunătățiri vizuale ale cardului.
+
 ## 2.1
 - Card: nu mai apare eroarea `allW.filter is not a function` când ANM nu are avertizări și trimite textul „Nu exista avertizari” în loc de listă.
 - Card: când ANM nu are niciun mesaj, nu se mai afișează un bloc gol de „mesaj complet” cu „Nu afectează <județ>”. Secțiunea apare doar când există mesaje reale.

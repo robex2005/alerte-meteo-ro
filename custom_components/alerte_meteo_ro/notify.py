@@ -6,8 +6,10 @@ link către un dashboard și o notificare „✅ Alertă Meteo Finalizată” la
 """
 from __future__ import annotations
 
+import html
 import logging
 import re
+from datetime import datetime
 from typing import Any
 
 from homeassistant.core import HomeAssistant
@@ -81,6 +83,47 @@ def _clean(text: str, limit: int = 220) -> str:
 def _fenomene_list(text: str) -> str:
     items = [i.strip(" .") for i in _clean(text, 400).split(",") if i.strip(" .")]
     return "".join(f"\n- {i}" for i in items)
+
+
+_MESE = ["ianuarie", "februarie", "martie", "aprilie", "mai", "iunie", "iulie",
+         "august", "septembrie", "octombrie", "noiembrie", "decembrie"]
+
+
+def _is_vag(text: Any) -> bool:
+    """ANM scrie uneori „conform textelor” în loc de interval/fenomene (sau lipsesc)."""
+    t = str(text or "").strip().lower()
+    return not t or t == "necunoscut" or "conform text" in t
+
+
+def _interval_anm(a: dict[str, Any]) -> str:
+    """Intervalul în formatul ANM („23 noiembrie, ora 10 – 24 noiembrie, ora 20”).
+
+    Dacă ANM trimite „conform textelor”, îl refacem din data de apariție/expirare din listă,
+    la fel indiferent dacă datele vin din API-ul JSON sau din fluxul XML.
+    """
+    iv = a.get("intervalul", "")
+    if not _is_vag(iv):
+        return iv
+    try:
+        s = datetime.fromisoformat(str(a.get("data_aparitiei")))
+        e = datetime.fromisoformat(str(a.get("data_expirarii")))
+    except (TypeError, ValueError):
+        return iv
+    if e <= s:
+        return iv
+    f = lambda d: f"{d.day} {_MESE[d.month - 1]}, ora {d.hour:02d}"
+    return f"{f(s)} – {f(e)}"
+
+
+def _fenomene_anm(a: dict[str, Any]) -> str:
+    """Fenomenele; când lista spune „conform textelor”, le luăm din textul mesajului ANM."""
+    fen = a.get("fenomene_vizate", "")
+    if not _is_vag(fen):
+        return fen
+    text = re.sub(r"<br\s*/?>|</p>|</div>", "\n", str(a.get("mesaj") or ""), flags=re.I)
+    text = html.unescape(re.sub(r"<[^>]*>", "", text))
+    m = re.search(r"Fenomene\s+vizate\s*:\s*([^\n]+)", text, flags=re.I)
+    return m.group(1).strip() if m else fen
 
 
 def format_anm(level: int, judet_nume: str, interval: str, fenomene: str) -> tuple[str, str]:
@@ -264,7 +307,7 @@ class AlerteNotifier:
             self._seen.append(key)
             changed = True
             title, message = format_anm(
-                level, judet_nume, a.get("intervalul", ""), a.get("fenomene_vizate", "")
+                level, judet_nume, _interval_anm(a), _fenomene_anm(a)
             )
             await self.async_send(title, message, level, f"amr_anm_{judet_cod.lower()}")
 
