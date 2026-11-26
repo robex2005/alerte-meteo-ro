@@ -1,0 +1,29 @@
+name: Release zip
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to attach the zip to"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  zip:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name || inputs.tag }}
+      - name: Build zip
+        run: |
+          cd custom_components/alerte_meteo_ro
+          zip -r "$GITHUB_WORKSPACE/alerte_meteo_ro.zip" . -x "__pycache__/*" "*.pyc"
+      - name: Upload to release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ github.event.release.tag_name || inputs.tag }}" alerte_meteo_ro.zip --clobber
