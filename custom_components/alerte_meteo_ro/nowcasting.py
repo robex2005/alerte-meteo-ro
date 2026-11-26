@@ -1,9 +1,12 @@
 """Senzori nowcasting (avertizări pe termen foarte scurt) - Alerte Meteo România.
 
-Provine din integrarea alerta-nowcasting (MIT, Dan), integrată aici.
+Bazat pe alerta-nowcasting (https://github.com/dancucu/alerta-nowcasting),
+Copyright (c) 2026 Dan, licențiat MIT. Textul complet al licenței MIT și notița de copyright
+a autorului original: LICENSES/alerta-nowcasting-MIT.txt (vezi și NOTICE). Modificat și integrat aici.
 """
 from __future__ import annotations
 
+import asyncio
 import logging
 import re
 from datetime import timedelta
@@ -12,9 +15,9 @@ import xml.etree.ElementTree as ET
 from html import unescape
 
 import aiohttp
-import async_timeout
 
 from homeassistant.components.sensor import SensorEntity
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -60,14 +63,16 @@ class AlerteNowcastingCoordinator(DataUpdateCoordinator):
     async def _async_update_data(self) -> dict[str, Any]:
         """Fetch data from API."""
         try:
-            async with async_timeout.timeout(30):
-                async with aiohttp.ClientSession() as session:
-                    async with session.get(self.api_url) as response:
-                        if response.status != 200:
-                            raise UpdateFailed(f"Error fetching data: {response.status}")
-                        
-                        xml_data = await response.text()
-                        return self._parse_xml(xml_data)
+            session = async_get_clientsession(self.hass)
+            async with asyncio.timeout(30):
+                async with session.get(self.api_url) as response:
+                    if response.status != 200:
+                        raise UpdateFailed(f"Error fetching data: {response.status}")
+
+                    xml_data = await response.text()
+                    return self._parse_xml(xml_data)
+        except UpdateFailed:
+            raise
         except aiohttp.ClientError as err:
             raise UpdateFailed(f"Error communicating with API: {err}") from err
         except Exception as err:

@@ -7,12 +7,12 @@ from datetime import timedelta
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.event import async_track_time_interval
 
 from .anm import (
     ANMAlertIDSensor,
     ANMAlertSensor,
     ANMApiStatusSensor,
+    ANMCoordinator,
     ANMMapColorSensor,
     ANMMapSensor,
     ANMMessageSensor,
@@ -53,28 +53,6 @@ async def async_setup_entry(
     judet_nume = JUDETE.get(judet_cod, judet_cod)
     interval = timedelta(minutes=cfg.get(CONF_UPDATE_INTERVAL, DEFAULT_ANM_INTERVAL))
 
-    # --- Avertizări ANM ---
-    alert_sensor = ANMAlertSensor(hass)
-    id_sensor = ANMAlertIDSensor(hass)
-    message_sensor = ANMMessageSensor(hass, judet_cod, judet_nume, alert_sensor)
-    map_sensor = ANMMapSensor(hass, judet_cod, judet_nume, id_sensor)
-    color_sensor = ANMMapColorSensor(hass, judet_cod, judet_nume, id_sensor)
-    api_sensor = ANMApiStatusSensor(alert_sensor)
-    anm_entities = [alert_sensor, id_sensor, message_sensor, map_sensor, color_sensor, api_sensor]
-
-    async def update_anm(now=None) -> None:
-        _LOGGER.debug("Actualizare senzori ANM")
-        # Ordinea contează: ceilalți senzori se bazează pe primii doi.
-        await alert_sensor.async_update()
-        await id_sensor.async_update()
-        await message_sensor.async_update()
-        await map_sensor.async_update()
-        await color_sensor.async_update()
-
-        await notifier.async_check_anm(
-            alert_sensor._attributes.get("avertizari"), judet_cod, judet_nume
-        )
-
     # --- Notificări aplicație companion ---
     notifier = AlerteNotifier(
         hass,
@@ -94,14 +72,33 @@ async def async_setup_entry(
         "judet_nume": judet_nume,
     }
 
+    # --- Avertizări ANM: un singur coordinator, o descărcare pe intervalul configurat ---
+    anm = ANMCoordinator(hass, judet_cod, interval)
     # Ultimele avertizări ANM de pe disc: rămân vizibile (până expiră) dacă ANM nu răspunde la pornire.
-    await alert_sensor.async_load_cache()
-
+    await anm.async_load_cache()
     # Prima actualizare înainte de adăugare, ca senzorii să aibă valori imediat.
-    await update_anm()
-    entry.async_on_unload(async_track_time_interval(hass, update_anm, interval))
+    await anm.async_config_entry_first_refresh()
 
-    entities = list(anm_entities)
+    async def _notify_anm() -> None:
+        alerts = (anm.data or {}).get("alerts") or {}
+        await notifier.async_check_anm(
+            (alerts.get("attributes") or {}).get("avertizari"), judet_cod, judet_nume
+        )
+
+    if notifier.enabled:
+        await _notify_anm()
+        entry.async_on_unload(
+            anm.async_add_listener(lambda: hass.async_create_task(_notify_anm()))
+        )
+
+    entities = [
+        ANMAlertSensor(anm),
+        ANMAlertIDSensor(anm),
+        ANMMessageSensor(anm, judet_cod, judet_nume),
+        ANMMapSensor(anm, judet_cod, judet_nume),
+        ANMMapColorSensor(anm, judet_cod, judet_nume),
+        ANMApiStatusSensor(anm),
+    ]
 
     # --- Nowcasting ---
     if cfg.get(CONF_NOWCASTING, True):

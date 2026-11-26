@@ -155,7 +155,7 @@ Amândouă își găsesc singure județul din integrare — nu trebuie editate. 
 
 ## Istoric și licență
 
-Versiuni în [CHANGELOG.md](CHANGELOG.md). Licență **GPL-3.0**; provine din unificarea și îmbunătățirea integrărilor [`alerta-anm-judet-romania`](https://github.com/dancucu/alerta-anm-judet-romania) (GPL-3.0) și [`alerta-nowcasting`](https://github.com/dancucu/alerta-nowcasting) (MIT) de `dancucu`. Date: Administrația Națională de Meteorologie.
+Versiuni în [CHANGELOG.md](CHANGELOG.md). Licență **GPL-3.0**; provine din unificarea și îmbunătățirea integrărilor [`alerta-anm-judet-romania`](https://github.com/dancucu/alerta-anm-judet-romania) (GPL-3.0) și [`alerta-nowcasting`](https://github.com/dancucu/alerta-nowcasting) (MIT) de `dancucu`; drepturile de autor și licențele lor sunt în [NOTICE](NOTICE) și [LICENSES/](LICENSES/). Date: Administrația Națională de Meteorologie.
 
 ---
 
@@ -292,4 +292,4 @@ Both find the integration's county on their own — no editing needed. In the `b
 
 ### Changelog and license
 
-Versions in [CHANGELOG.md](CHANGELOG.md) (in Romanian). License **GPL-3.0**; it merges and improves the [`alerta-anm-judet-romania`](https://github.com/dancucu/alerta-anm-judet-romania) (GPL-3.0) and [`alerta-nowcasting`](https://github.com/dancucu/alerta-nowcasting) (MIT) integrations by `dancucu`. Data: Administrația Națională de Meteorologie (ANM).
+Versions in [CHANGELOG.md](CHANGELOG.md) (in Romanian). License **GPL-3.0**; it merges and improves the [`alerta-anm-judet-romania`](https://github.com/dancucu/alerta-anm-judet-romania) (GPL-3.0) and [`alerta-nowcasting`](https://github.com/dancucu/alerta-nowcasting) (MIT) integrations by `dancucu`; their copyright and license notices are in [NOTICE](NOTICE) and [LICENSES/](LICENSES/). Data: Administrația Națională de Meteorologie (ANM).

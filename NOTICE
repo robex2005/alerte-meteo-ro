@@ -1,0 +1,20 @@
+Alerte Meteo România
+Licensed under the GNU General Public License v3.0 (see LICENSE).
+
+This project includes code derived from the following works:
+
+1. alerta-anm-judet-romania
+   https://github.com/dancucu/alerta-anm-judet-romania
+   Copyright (C) 2026 dancucu
+   Licensed under the GNU General Public License v3.0.
+   Used in: custom_components/alerte_meteo_ro/anm.py,
+            custom_components/alerte_meteo_ro/harta.py
+
+2. alerta-nowcasting
+   https://github.com/dancucu/alerta-nowcasting
+   Copyright (c) 2026 Dan
+   Licensed under the MIT License; the full license text, including the
+   copyright notice and permission notice, is in LICENSES/alerta-nowcasting-MIT.txt.
+   Used in: custom_components/alerte_meteo_ro/nowcasting.py
+
+Weather data: Administrația Națională de Meteorologie (ANM), https://www.meteoromania.ro

@@ -1,5 +1,8 @@
 # Istoric versiuni
 
+## 3.1
+- Bugfixuri și optimizări de cod.
+
 ## 3.0
 - Rezervă automată: când API-ul ANM nu răspunde, datele se iau din fluxul XML de pe meteoromania.ro.
 - Ultimele avertizări rămân salvate până expiră, și după un restart sau o pană ANM.
