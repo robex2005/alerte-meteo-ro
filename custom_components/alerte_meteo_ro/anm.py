@@ -284,7 +284,7 @@ class ANMCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         except (aiohttp.ClientError, TimeoutError):
             return "eroare_http", {}
         try:
-            return parse_map(content, self.judet_cod)
+            return await self.hass.async_add_executor_job(parse_map, content, self.judet_cod)
         except Exception:  # noqa: BLE001 - SVG neașteptat: nu oprim actualizarea
             _LOGGER.exception("Eroare la citirea hărții ANM %s", map_id)
             return "eroare_script", {}

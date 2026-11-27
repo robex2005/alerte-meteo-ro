@@ -1,5 +1,8 @@
 # Istoric versiuni
 
+## 3.2
+- Optimizări de cod.
+
 ## 3.1
 - Bugfixuri și optimizări de cod.
 
