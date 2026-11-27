@@ -36,7 +36,8 @@ async def _async_register_card(hass: HomeAssistant) -> None:
     url = f"/{DOMAIN}_static/alerte-meteo-card.js"
     path = Path(__file__).parent / "www" / "alerte-meteo-card.js"
     await hass.http.async_register_static_paths([StaticPathConfig(url, str(path), False)])
-    version = path.stat().st_mtime_ns  # URL nou la fiecare actualizare => fără cache vechi
+    stat = await hass.async_add_executor_job(path.stat)
+    version = stat.st_mtime_ns  # URL nou la fiecare actualizare => fără cache vechi
     frontend.add_extra_js_url(hass, f"{url}?v={version}")
     hass.data[DOMAIN]["card_registered"] = True
 

@@ -45,9 +45,17 @@ Integrare Home Assistant pentru **avertizările meteo ANM** (pe județ) și **al
 
 ## Instalare
 
-1. **Marketplace → Adaugă prin link** (sau ⋮ → **Depozite personalizate** → **Adaugă prin link**) → `https://github.com/robex2005/alerte-meteo-ro` → **Adaugă**.
-2. Instalează **Alerte Meteo România** și repornește Home Assistant.
+Integrarea este **disponibilă direct în Marketplace**, nu mai e nevoie să adaugi manual depozitul.
+
+<p align="center">
+  <a href="https://my.home-assistant.io/redirect/hacs_repository/?owner=robex2005&repository=alerte-meteo-ro&category=integration"><img src="https://my.home-assistant.io/badges/hacs_repository.svg" alt="Deschide în Marketplace"></a>
+</p>
+
+1. Apasă butonul de mai sus (se deschide direct pagina integrării în Home Assistant) **sau** caută manual: **Marketplace** → caută **Alerte Meteo România**.
+2. Apasă **Descarcă** și repornește Home Assistant.
 3. **Setări → Dispozitive și servicii → Adaugă integrare → Alerte Meteo România.**
+
+> Butonul folosește [My Home Assistant](https://my.home-assistant.io): la prima apăsare îți cere adresa instanței tale Home Assistant, apoi o reține.
 
 Cerințe: Home Assistant **2024.12** sau mai nou, acces la internet (date de la `meteoromania.ro`). Dacă ai integrările vechi `alerta_anm_judet_romania` / `alerta_nowcasting`, șterge-le întâi (entitățile s-ar dubla).
 
@@ -188,9 +196,17 @@ Home Assistant integration for **ANM weather warnings** (per county; ANM is Roma
 
 ### Installation
 
-1. **Marketplace → Add via link** (or ⋮ → **Custom repositories** → **Add via link**) → `https://github.com/robex2005/alerte-meteo-ro` → **Add**.
-2. Install **Alerte Meteo România** and restart Home Assistant.
+The integration is **available directly in the Marketplace**, no need to add the repository manually.
+
+<p align="center">
+  <a href="https://my.home-assistant.io/redirect/hacs_repository/?owner=robex2005&repository=alerte-meteo-ro&category=integration"><img src="https://my.home-assistant.io/badges/hacs_repository.svg" alt="Open in Marketplace"></a>
+</p>
+
+1. Click the button above (it opens the integration page straight in Home Assistant) **or** search manually: **Marketplace** → search **Alerte Meteo România**.
+2. Click **Download** and restart Home Assistant.
 3. **Settings → Devices & services → Add integration → Alerte Meteo România.**
+
+> The button uses [My Home Assistant](https://my.home-assistant.io): the first time you click it, it asks for your Home Assistant instance address and remembers it.
 
 Requirements: Home Assistant **2024.12** or newer, internet access (data from `meteoromania.ro`). If you have the old `alerta_anm_judet_romania` / `alerta_nowcasting` integrations, remove them first (the entities would be duplicated).
 
